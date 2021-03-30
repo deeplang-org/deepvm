@@ -51,6 +51,14 @@ typedef struct WASMModule {
 	WASMFunction** func_section;
 } WASMModule;
 
+//the difinition of listnode
+typedef struct section_listnode {
+	char                     section_type;
+	int                      section_size;
+	char*                    section_begin;
+	struct section_listnode* next;
+} section_listnode;
+
 //read a value of specified type
 #define TEMPLATE_READ_VALUE(Type, p) \
 	(p += sizeof(Type), *(Type*)(p - sizeof(Type)))
@@ -80,14 +88,6 @@ static bool check_magic_number_and_version(char** p) {
 		return true;
 	return false;
 }
-
-//section的链表节点定义
-typedef struct section_listnode {
-	char                     section_type;
-	int                      section_size;
-	struct section_listnode* next;
-	char*                    section_begin;
-} section_listnode;
 
 //解析出每个section的开始和大小和类型，拉成一个链表， 从第二项开始存
 static bool create_section_list(const char** p, int size, section_listnode* section_list) {
@@ -141,12 +141,12 @@ static void load_type_section(const char* p, WASMModule* module) {
 
 //读取函数段
 static void load_func_section(const char* p, WASMModule* module, const char* p_code) {
-	cout << (void*)p << endl;
 	int           func_count      = read_leb_u32((char**)&p);
 	int           code_func_count = read_leb_u32((char**)&p_code);
 	int           type_index, code_size, local_set_count;
 	WASMFunction* func;
 	LocalVars*    local_set;
+	const char*   p_code_temp;
 	if (func_count == code_func_count) {
 		module->function_count = func_count;
 		module->func_section   = (WASMFunction**)malloc(func_count * sizeof(WASMFunction*));
@@ -154,11 +154,14 @@ static void load_func_section(const char* p, WASMModule* module, const char* p_c
 		for (int i = 0; i < func_count; i++) {
 			func = module->func_section[i] = (WASMFunction*)malloc(sizeof(WASMFunction));
 			memset(func, 0, sizeof(WASMFunction));
-			type_index      = read_leb_u32((char**)&p);
-			code_size       = read_leb_u32((char**)&p_code);
+			type_index  = read_leb_u32((char**)&p);
+			code_size   = read_leb_u32((char**)&p_code);
+			p_code_temp = p_code;
+			cout << code_size << endl;
 			func->func_type = module->type_section[type_index];
 			func->code_size = code_size;
 			local_set_count = read_leb_u32((char**)&p_code);
+			cout << local_set_count << endl;
 			if (local_set_count == 0) {
 				func->localvars = NULL;
 			} else {
@@ -170,6 +173,7 @@ static void load_func_section(const char* p, WASMModule* module, const char* p_c
 				}
 			}
 			func->code_begin = (char*)p_code;
+			p_code           = p_code_temp + code_size;
 		}
 	}
 }
@@ -185,7 +189,6 @@ static void load_from_sections(WASMModule* module, section_listnode* section_lis
 	p_code = section->section_begin;
 	while (section_list) {
 		buf = section_list->section_begin;
-
 		switch (section_list->section_type) {
 		case SECTION_TYPE_USER:
 
