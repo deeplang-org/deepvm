@@ -5,8 +5,16 @@
 #include "interp.h"
 #include "loader.cpp"
 #include "opcode.h"
-#include <iostream>
+#include <stdio.h>
 using namespace std;
+
+
+#define popS32() (int32_t)*(--sp)
+#define popF32() (float)*(--sp)
+#define popU32() (uint32_t)*(--sp)
+#define pushS32(x)  *(sp) = (int32_t)(x);sp++
+#define pushF32(x) *(sp) = (int32_t)(x);sp++ 
+#define pushU32(x) *(sp) = (int32_t)(x);sp++ 
 
 //执行代码块指令
 void exec_instructions(DEEPExecEnv* env){
@@ -17,48 +25,59 @@ void exec_instructions(DEEPExecEnv* env){
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         int opcode = (int)*ip;
-        int temp1,temp2;
         switch(opcode){
-            case DEEP_OP_END:
+            case op_end:{
                 ip++;
                 break;
-
-            case DEEP_OP_I32_ADD:
+            }
+            case i32_eqz:{
                 ip++;
-                temp1 = *(--sp);
-                *(sp-1) += temp1;
+                uint32_t a = popU32();
+                popU32(a==0?1:0);
                 break;
-
-            case DEEP_OP_I32_SUB:
+            }
+            case i32_add:{
                 ip++;
-                temp1 = *(--sp);
-                *(sp-1) += temp1;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(a+b);
                 break;
-
-            case DEEP_OP_I32_MUL:
+            }
+            case i32_sub:{
                 ip++;
-                temp1 = *(--sp);
-                *(sp-1) *= temp1;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(a-b);
                 break;
-
-            case DEEP_OP_I32_DIV_U:
+            }
+            case i32_mul:{
                 ip++;
-                temp1 = *(--sp);
-                temp2 = *(--sp);
-                if(temp2 != 0){
-                    *(sp++) = temp1/temp2;
-                }
-                break;
-
-            case DEEP_OP_I32_CONST:
-                //读取立即数
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(a*b);
+                break; 
+            }
+            case i32_divs:{
                 ip++;
-                int temp = read_leb_u32(&ip);
-                //temp入栈
-                *(sp++) = temp;
+                int32_t a = popS32();
+                int32_t b = popS32();
+                pushS32(a/b);
+                break; 
+            }
+            case i32_divu:{
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(a/b);
                 break;
+            }
+            case i32_const:{
+                ip++;
+                uint32_t temp = read_leb_u32(&ip);
+                pushU32(temp);
+                break;
+            }
         }
-
         //检查操作数栈是否溢出
         if(sp > env->sp_end){
             printf("%s","warning! Operand stack overflow!");

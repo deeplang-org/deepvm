@@ -6,7 +6,7 @@
 #define C___PROJECTS_INTERP_H
 
 #endif //C___PROJECTS_INTERP_H
-#include "stdlib.h"
+#include <stdlib.h>
 
 //帧
 struct DEEPInterpFrame {  //DEEP帧
