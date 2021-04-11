@@ -3,61 +3,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#define MAGIC_NUMBER        0x6d736100
-#define VERSION             1
-#define SECTION_TYPE_USER   0
-#define SECTION_TYPE_TYPE   1
-#define SECTION_TYPE_IMPORT 2
-#define SECTION_TYPE_FUNC   3
-#define SECTION_TYPE_TABLE  4
-#define SECTION_TYPE_MEMORY 5
-#define SECTION_TYPE_GLOBAL 6
-#define SECTION_TYPE_EXPORT 7
-#define SECTION_TYPE_START  8
-#define SECTION_TYPE_ELEM   9
-#define SECTION_TYPE_CODE   10
-#define SECTION_TYPE_DATA   11
-
-using namespace std;
-
-//type item
-typedef struct DEEPType {
-	int  param_count;
-	int  ret_count;
-	char type[1];
-} DEEPType;
-
-//local variables item
-typedef struct LocalVars {
-	int   count;
-	short local_type;
-} LocalVars;
-
-//function item
-typedef struct DEEPFunction {
-	DEEPType*   func_type; // the type of function
-	LocalVars** localvars;
-	int         code_size;
-	char*       code_begin;
-} DEEPFunction;
-
-/* Data structure of module, at present we only support 
-two sections, which can make the program run*/
-typedef struct DEEPModule {
-	int            type_count;
-	int            function_count;
-	DEEPType**     type_section;
-	DEEPFunction** func_section;
-} DEEPModule;
-
-//the difinition of listnode
-typedef struct section_listnode {
-	char                     section_type;
-	int                      section_size;
-	char*                    section_begin;
-	struct section_listnode* next;
-} section_listnode;
+#include "deeploader.h"
 
 //read a value of specified type
 #define READ_VALUE(Type, p) \
@@ -87,6 +33,12 @@ static bool check_magic_number_and_version(char** p) {
 	if (magic_number == MAGIC_NUMBER && version == VERSION)
 		return true;
 	return false;
+}
+
+static char* str_gen(const char* p, int len) {
+	char* str = (char*)malloc(len + 1);
+	memcpy(str, p, len);
+	str[len] = '\0';
 }
 
 //解析出每个section的开始和大小和类型，拉成一个链表， 从第二项开始存
@@ -175,6 +127,25 @@ static void decode_func_section(const char* p, DEEPModule* module, const char* p
 		}
 	}
 }
+
+//读取导出段
+static void decode_export_section(const char* p, DEEPModule* module) {
+	int export_count = read_leb_u32((char**)&p);
+	int name_len;
+	DEEPExport* Export; //"export"在c++中是一个关键字，所以不能用export
+	module->export_count = export_count;
+	module->export_section = (DEEPExport**)malloc(export_count * sizeof(DEEPExport*));
+
+	for (int i = 0; i < export_count; i ++) {
+		Export = module->export_section[i] = (DEEPExport*)malloc(sizeof(DEEPExport));
+		name_len = read_leb_u32((char**)&p);
+		Export->name = str_gen(p, name_len);
+		p += name_len;
+		Export->tag = READ_CHAR(p);
+		Export->index = read_leb_u32((char**)&p);
+	}
+}
+
 
 //依次遍历每个section，遇到需要的就load进module
 static void decode_each_sections(DEEPModule* module, section_listnode* section_list) {
@@ -265,9 +236,6 @@ int main() {
 	int         file;
 	int         size;
 	file = open(path, O_RDONLY);
-	if (file < 0) {
-		cout << "open fail" << endl;
-	}
 	size = (int)read(file, p, 1024);
 	DEEPModule* module = deep_load(&p, size);
 }
