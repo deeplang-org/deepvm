@@ -13,8 +13,8 @@ using namespace std;
 #define popF32() (float)*(--sp)
 #define popU32() (uint32_t)*(--sp)
 #define pushS32(x)  *(sp) = (int32_t)(x);sp++
-#define pushF32(x) *(sp) = (int32_t)(x);sp++ 
-#define pushU32(x) *(sp) = (int32_t)(x);sp++ 
+#define pushF32(x) *(sp) = (float)(x);sp++ 
+#define pushU32(x) *(sp) = (uint32_t)(x);sp++ 
 
 //执行代码块指令
 void exec_instructions(DEEPExecEnv* env){
