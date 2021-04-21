@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "deep_interp.h"
 #include "deep_loader.h"
+#include "deep_log.h"
 #define WASM_FILE_SIZE 1024
 
 int32_t main(int argv,char ** args) {
