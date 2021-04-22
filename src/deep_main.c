@@ -14,7 +14,8 @@ int32_t main(int argv,char ** args) {
     }else{
         path = args[1];
     }
-	uint8_t* p = (uint8_t *) malloc(WASM_FILE_SIZE);
+	uint8_t* q = (uint8_t *) malloc(WASM_FILE_SIZE);
+	uint8_t* p = q;
     if (p == NULL) {
         printf("malloc fail.\r\n");
         return -1;
@@ -46,6 +47,7 @@ int32_t main(int argv,char ** args) {
     /* release memory */
     fclose(fp);
     free(module);
-    free(p);
+    free(q);
+    p = NULL;
     return 0;
 }
