@@ -7,7 +7,7 @@
 #include "deep_log.h"
 #define WASM_FILE_SIZE 1024
 
-int32_t main(int argv,char ** args) {
+int32_t main(int argv, char ** args) {
     char* path;
     if(argv==1){
         printf("no file input!\r\n");
