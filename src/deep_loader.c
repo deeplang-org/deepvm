@@ -1,3 +1,9 @@
+/**
+ * Filename:deeploader.h
+ * Author:megumin
+ * Date:4/10/2021
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -42,14 +48,14 @@ static char* str_gen(const char* p, int len) {
 }
 
 //解析出每个section的开始和大小和类型，拉成一个链表， 从第二项开始存
-static bool create_section_list(uint8_t** p, int32_t size, section_listnode* section_list) {
-	uint8_t *buf = *p, *buf_end = buf + size;
+static bool create_section_list(const uint8_t** p, int32_t size, section_listnode* section_list) {
+	const uint8_t *buf = *p, *buf_end = buf + size;
 	while (buf < buf_end) {
 		section_listnode* section = (section_listnode*)malloc(sizeof(section_listnode));
 		memset(section, 0, sizeof(section_listnode));
 		section->section_type  = READ_BYTE(buf);
-		section->section_size  = read_leb_u32(&buf);
-		section->section_begin = buf;
+		section->section_size  = read_leb_u32((uint8_t**)&buf);
+		section->section_begin = (uint8_t*)buf;
 		buf += section->section_size;
 		section_list->next = section;
 		section_list       = section;
@@ -60,9 +66,9 @@ static bool create_section_list(uint8_t** p, int32_t size, section_listnode* sec
 }
 
 //读取类型段
-static void decode_type_section(uint8_t* p, DEEPModule* module) {
+static void decode_type_section(const uint8_t* p, DEEPModule* module) {
 
-	uint8_t* p_tmp;
+	const uint8_t* p_tmp;
 	int32_t         total_size = 0;
 	int32_t         type_count = 0, param_count = 0, ret_count = 0;
 	module->type_count = type_count = read_leb_u32((uint8_t**)&p);
@@ -83,7 +89,7 @@ static void decode_type_section(uint8_t* p, DEEPModule* module) {
 			for (int32_t j = 0; j < param_count; j++) {
 				module->type_section[i]->type[j] = READ_BYTE(p);
 			}
-			read_leb_u32(&p);
+			read_leb_u32((uint8_t**)&p);
 			for (int32_t j = 0; j < ret_count; j++) {
 				module->type_section[i]->type[param_count + j] = READ_BYTE(p);
 			}
@@ -92,13 +98,13 @@ static void decode_type_section(uint8_t* p, DEEPModule* module) {
 }
 
 //读取函数段
-static void decode_func_section(uint8_t* p, DEEPModule* module, uint8_t* p_code) {
+static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8_t* p_code) {
 	int32_t           func_count      = read_leb_u32(&p);
 	int32_t           code_func_count = read_leb_u32(&p_code);
 	int32_t           type_index, code_size, local_set_count;
 	DEEPFunction* func;
 	LocalVars*    local_set;
-	uint8_t*   p_code_temp;
+	const uint8_t*   p_code_temp;
 	if (func_count == code_func_count) {
 		module->function_count = func_count;
 		module->func_section   = (DEEPFunction**)malloc(func_count * sizeof(DEEPFunction*));
@@ -106,31 +112,31 @@ static void decode_func_section(uint8_t* p, DEEPModule* module, uint8_t* p_code)
 		for (int32_t i = 0; i < func_count; i++) {
 			func = module->func_section[i] = (DEEPFunction*)malloc(sizeof(DEEPFunction));
 			memset(func, 0, sizeof(DEEPFunction));
-			type_index  = read_leb_u32(&p);
-			code_size   = read_leb_u32(&p_code);
+			type_index  = read_leb_u32((uint8_t**)&p);
+			code_size   = read_leb_u32((uint8_t**)&p_code);
 			p_code_temp = p_code;
 			func->func_type = module->type_section[type_index];
 			func->code_size = code_size;
-			local_set_count = read_leb_u32(&p_code);
+			local_set_count = read_leb_u32((uint8_t**)&p_code);
 			if (local_set_count == 0) {
 				func->localvars = NULL;
 			} else {
 				func->localvars = (LocalVars**)malloc(local_set_count * sizeof(LocalVars*));
 				for (int32_t j = 0; j < local_set_count; j++) {
 					local_set = func->localvars[j] = (LocalVars*)malloc(sizeof(LocalVars));
-					local_set->count                 = read_leb_u32(&p_code);
+					local_set->count                 = read_leb_u32((uint8_t**)&p_code);
 					local_set->local_type          = READ_BYTE(p_code);
 				}
 			}
-			func->code_begin = p_code;
+			func->code_begin = (uint8_t*)p_code;
 			p_code           = p_code_temp + code_size;
 		}
 	}
 }
 
 //读取导出段
-static void decode_export_section(uint8_t* p, DEEPModule* module) {
-	int32_t export_count = read_leb_u32(&p);
+static void decode_export_section(const uint8_t* p, DEEPModule* module) {
+	int32_t export_count = read_leb_u32((uint8_t**)&p);
 	int32_t name_len;
 	DEEPExport* Export; //"export"在c++中是一个关键字，所以不能用export
 	module->export_count = export_count;
@@ -138,11 +144,11 @@ static void decode_export_section(uint8_t* p, DEEPModule* module) {
 
 	for (int32_t i = 0; i < export_count; i ++) {
 		Export = module->export_section[i] = (DEEPExport*)malloc(sizeof(DEEPExport));
-		name_len = read_leb_u32(&p);
+		name_len = read_leb_u32((uint8_t**)&p);
 		Export->name = str_gen(p, name_len);
 		p += name_len;
 		Export->tag = READ_BYTE(p);
-		Export->index = read_leb_u32(&p);
+		Export->index = read_leb_u32((uint8_t**)&p);
 	}
 }
 
@@ -151,7 +157,7 @@ static void decode_export_section(uint8_t* p, DEEPModule* module) {
 static void decode_each_sections(DEEPModule* module, section_listnode* section_list) {
 
 	section_listnode* section = section_list;
-	uint8_t *      buf = NULL, *p_code = NULL;
+	const uint8_t *      buf = NULL, *p_code = NULL;
 	while (section->section_type != SECTION_TYPE_CODE) {
 		section = section->next;
 	}
@@ -213,7 +219,7 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
 	section_listnode* section_list = (section_listnode*)malloc(sizeof(section_list));
 	memset(section_list, 0, sizeof(section_list));
 	size -= 8;
-	create_section_list(p, size, section_list);
+	create_section_list((const uint8_t**)p, size, section_list);
 
 	DEEPModule* module = (DEEPModule*)malloc(sizeof(DEEPModule));
 	memset(module, 0, sizeof(module));
