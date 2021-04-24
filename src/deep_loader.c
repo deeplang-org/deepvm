@@ -99,8 +99,8 @@ static void decode_type_section(const uint8_t* p, DEEPModule* module) {
 
 //读取函数段
 static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8_t* p_code) {
-	int32_t           func_count      = read_leb_u32(&p);
-	int32_t           code_func_count = read_leb_u32(&p_code);
+	int32_t           func_count      = read_leb_u32((uint8_t**)&p);
+	int32_t           code_func_count = read_leb_u32((uint8_t**)&p_code);
 	int32_t           type_index, code_size, local_set_count;
 	DEEPFunction* func;
 	LocalVars*    local_set;
