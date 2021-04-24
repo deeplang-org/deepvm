@@ -1,5 +1,5 @@
 /**
- * Filename:deeploader.h
+ * Filename:deep_loader.c
  * Author:megumin
  * Date:4/10/2021
  */
@@ -214,7 +214,7 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
 }
 
 
- DEEPModule* deep_load(uint8_t** p, int size) {
+DEEPModule* deep_load(uint8_t** p, int size) {
 	if (!check_magic_number_and_version(p))
 		return NULL;
 	section_listnode* section_list = (section_listnode*)malloc(sizeof(section_list));
@@ -236,3 +236,25 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
 	return module;
 }
 
+// DEEPModule* module = deep_load(&p, size);
+//DOING：开发dump指令，方便后续调试程序
+
+void type_section_dump(DEEPModule* module) {
+	uint32_t i, j = 0;
+	printf("%s\n", "========================================================");
+	printf("%s\t%d\n", "TYPE_SECTION", module->type_count);
+	for (i = 0; i < module->type_count; i ++) {
+		printf("%s%d%c\t", "   - type[", i, ']');
+		printf("%s", "( ");
+		for (j = 0; j < module->type_section[i]->param_count; j ++) {
+			printf("%s", "int ");
+		}
+		printf("%s", ") -> ( ");
+		for (j = 0; j < module->type_section[i]->ret_count; j ++) {
+			printf("%s", "int ");
+		}
+		printf("%c", ')');
+		printf("\n");
+	}
+	printf("%s\n", "========================================================");
+}
