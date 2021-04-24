@@ -41,10 +41,11 @@ static bool check_magic_number_and_version(uint8_t** p) {
 	return false;
 }
 
-static char* str_gen(const char* p, int len) {
+static char* str_gen(const char* p, int32_t len) {
 	char* str = (char*)malloc((len + 1) * sizeof(char));
 	memcpy(str, p, len);
 	str[len] = '\0';
+	return str;
 }
 
 //解析出每个section的开始和大小和类型，拉成一个链表， 从第二项开始存
@@ -176,7 +177,6 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
 
 			break;
 		case SECTION_TYPE_FUNC:
-
 			decode_func_section(buf, module, p_code);
 
 			break;
@@ -190,6 +190,7 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
 
 			break;
 		case SECTION_TYPE_EXPORT:
+			decode_export_section(buf, module);
 
 			break;
 		case SECTION_TYPE_START:
