@@ -21,7 +21,6 @@ int32_t main(int argv, char ** args) {
         return -1;
     }
 
-    path = "/home/xj/deepvm_developing/example/test.wasm";
     FILE *fp = fopen(path, "rb"); /* read wasm file with binary mode */
     if(fp == NULL) {
         printf("file open fail.\r\n");
