@@ -1,0 +1,5 @@
+/mnt/d/githubProjects/deepvm_developing/cmake-build-debug/CMakeFiles/edit_cache.dir
+/mnt/d/githubProjects/deepvm_developing/cmake-build-debug/CMakeFiles/package_source.dir
+/mnt/d/githubProjects/deepvm_developing/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/mnt/d/githubProjects/deepvm_developing/cmake-build-debug/CMakeFiles/package.dir
+/mnt/d/githubProjects/deepvm_developing/cmake-build-debug/CMakeFiles/deepvm.dir

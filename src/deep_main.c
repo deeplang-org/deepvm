@@ -20,6 +20,7 @@ int32_t main(int argv, char ** args) {
         printf("malloc fail.\r\n");
         return -1;
     }
+
     FILE *fp = fopen(path, "rb"); /* read wasm file with binary mode */
     if(fp == NULL) {
         printf("file open fail.\r\n");

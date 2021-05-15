@@ -1,0 +1,1 @@
+/usr/bin/cc -g  -rdynamic CMakeFiles/deepvm.dir/src/deep_interp.c.o CMakeFiles/deepvm.dir/src/deep_loader.c.o CMakeFiles/deepvm.dir/src/deep_log.c.o CMakeFiles/deepvm.dir/src/deep_main.c.o  -o ../bin/deepvm 
