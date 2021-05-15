@@ -16,7 +16,7 @@ deep_loader.h
 
 ../include/deep_opcode.h
 
-/mnt/d/githubProjects/deepvm_developing/src/deep_interp.c
+/Users/apple/deepvm_developing/src/deep_interp.c
 stdio.h
 -
 stdlib.h
@@ -28,13 +28,39 @@ math.h
 string.h
 -
 deep_interp.h
-/mnt/d/githubProjects/deepvm_developing/src/deep_interp.h
+/Users/apple/deepvm_developing/src/deep_interp.h
 deep_loader.h
-/mnt/d/githubProjects/deepvm_developing/src/deep_loader.h
+/Users/apple/deepvm_developing/src/deep_loader.h
 deep_opcode.h
-/mnt/d/githubProjects/deepvm_developing/src/deep_opcode.h
+/Users/apple/deepvm_developing/src/deep_opcode.h
 
-/mnt/d/githubProjects/deepvm_developing/src/deep_main.c
+/Users/apple/deepvm_developing/src/deep_loader.c
+stdio.h
+-
+stdlib.h
+-
+stdbool.h
+-
+string.h
+-
+stdint.h
+-
+deep_loader.h
+/Users/apple/deepvm_developing/src/deep_loader.h
+deep_log.h
+/Users/apple/deepvm_developing/src/deep_log.h
+
+/Users/apple/deepvm_developing/src/deep_log.c
+stdio.h
+-
+string.h
+-
+stdarg.h
+-
+deep_log.h
+/Users/apple/deepvm_developing/src/deep_log.h
+
+/Users/apple/deepvm_developing/src/deep_main.c
 stdio.h
 -
 stdlib.h
@@ -42,9 +68,9 @@ stdlib.h
 stdint.h
 -
 deep_interp.h
-/mnt/d/githubProjects/deepvm_developing/src/deep_interp.h
+/Users/apple/deepvm_developing/src/deep_interp.h
 deep_loader.h
-/mnt/d/githubProjects/deepvm_developing/src/deep_loader.h
+/Users/apple/deepvm_developing/src/deep_loader.h
 deep_log.h
-/mnt/d/githubProjects/deepvm_developing/src/deep_log.h
+/Users/apple/deepvm_developing/src/deep_log.h
 

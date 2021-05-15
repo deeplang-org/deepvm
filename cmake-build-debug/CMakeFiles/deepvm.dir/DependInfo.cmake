@@ -4,12 +4,12 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/mnt/d/githubProjects/deepvm_developing/src/deep_interp.c" "/mnt/d/githubProjects/deepvm_developing/cmake-build-debug/CMakeFiles/deepvm.dir/src/deep_interp.c.o"
-  "/mnt/d/githubProjects/deepvm_developing/src/deep_loader.c" "/mnt/d/githubProjects/deepvm_developing/cmake-build-debug/CMakeFiles/deepvm.dir/src/deep_loader.c.o"
-  "/mnt/d/githubProjects/deepvm_developing/src/deep_log.c" "/mnt/d/githubProjects/deepvm_developing/cmake-build-debug/CMakeFiles/deepvm.dir/src/deep_log.c.o"
-  "/mnt/d/githubProjects/deepvm_developing/src/deep_main.c" "/mnt/d/githubProjects/deepvm_developing/cmake-build-debug/CMakeFiles/deepvm.dir/src/deep_main.c.o"
+  "/Users/apple/deepvm_developing/src/deep_interp.c" "/Users/apple/deepvm_developing/cmake-build-debug/CMakeFiles/deepvm.dir/src/deep_interp.c.o"
+  "/Users/apple/deepvm_developing/src/deep_loader.c" "/Users/apple/deepvm_developing/cmake-build-debug/CMakeFiles/deepvm.dir/src/deep_loader.c.o"
+  "/Users/apple/deepvm_developing/src/deep_log.c" "/Users/apple/deepvm_developing/cmake-build-debug/CMakeFiles/deepvm.dir/src/deep_log.c.o"
+  "/Users/apple/deepvm_developing/src/deep_main.c" "/Users/apple/deepvm_developing/cmake-build-debug/CMakeFiles/deepvm.dir/src/deep_main.c.o"
   )
-set(CMAKE_C_COMPILER_ID "GNU")
+set(CMAKE_C_COMPILER_ID "AppleClang")
 
 # The include file search paths:
 set(CMAKE_C_TARGET_INCLUDE_PATH

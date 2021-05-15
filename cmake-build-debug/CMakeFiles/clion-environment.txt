@@ -1,4 +1,3 @@
-ToolSet: Ubuntu 20.04.2 LTS (local)@C:\Users\xj\AppData\Local\Microsoft\WindowsApps\ubuntu.exe
-Options: 
+ToolSet: 1.0 (local)Options: 
 
 Options:

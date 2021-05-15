@@ -29,6 +29,7 @@ typedef struct DEEPExecEnv {
     uint32_t *sp;//sp指针
     uint32_t *local_vars;//函数局部变量
     uint32_t *global_vars;//全局变量
+    uint8_t *memory;//内存
 } DEEPExecEnv;
 
 

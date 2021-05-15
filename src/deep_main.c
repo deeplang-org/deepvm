@@ -45,7 +45,7 @@ int32_t main(int argv, char **args) {
     current_env->sp_end = stack->sp_end;
     current_env->sp = stack->sp;
     current_env->global_vars = (uint32_t *) malloc(sizeof(uint32_t) * 100);
-
+    current_env->memory = init_memory(1);
     int32_t ans = call_main(current_env, module);
 
     printf("%d\n", ans);
