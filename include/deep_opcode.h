@@ -6,7 +6,15 @@
 enum DEEPOpcode {
     op_end = 0x0b,
     op_call = 0x10,
+    //变量指令
     op_local_get = 0x20,
+    op_local_set = 0x21,
+    op_local_tee = 0x22,
+    op_global_get = 0x23,
+    op_global_set = 0x24,
+    //内存指令
+    i32_load = 0x28,
+    i32_store = 0x36,
     //常数指令
     i32_const = 0x41,
     f32_const = 0x42,
@@ -42,9 +50,9 @@ enum DEEPOpcode {
     i32_popcnt = 0x69,
     f32_abs = 0x8b,
     f32_neg = 0x8c,
-    f32_ceil= 0x8d,
-    f32_floor= 0x8e,
-    f32_trunc= 0x8f,
+    f32_ceil = 0x8d,
+    f32_floor = 0x8e,
+    f32_trunc = 0x8f,
     f32_nearest = 0x90,
     f32_sqrt = 0x91,
     //比较指令

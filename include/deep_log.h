@@ -34,12 +34,15 @@ extern "C" {
 #endif
 
 
-void log_printf (const char* pFileName, unsigned int uiLine, const char* pFuncName,char *LogFmtBuf, ...);
-void log_data(const char *pFileName, unsigned int uiLine, const char* pFuncName, const char *pcStr,unsigned char *pucBuf,unsigned int usLen);
-#define error(...) 							log_printf(__FILE__, __LINE__,__FUNCTION__,__VA_ARGS__)
-#define debug(...) 							log_printf(__FILE__, __LINE__,__FUNCTION__,__VA_ARGS__)
-#define dump(pcStr,pucBuf,usLen)			log_data(__FILE__, __LINE__,__FUNCTION__,pcStr,pucBuf,usLen)
+void log_printf(const char *pFileName, unsigned int uiLine, const char *pFuncName, char *LogFmtBuf, ...);
 
+void
+log_data(const char *pFileName, unsigned int uiLine, const char *pFuncName, const char *pcStr, unsigned char *pucBuf,
+         unsigned int usLen);
+
+#define error(...)                            log_printf(__FILE__, __LINE__,__FUNCTION__,__VA_ARGS__)
+#define debug(...)                            log_printf(__FILE__, __LINE__,__FUNCTION__,__VA_ARGS__)
+#define dump(pcStr, pucBuf, usLen)            log_data(__FILE__, __LINE__,__FUNCTION__,pcStr,pucBuf,usLen)
 
 
 #ifdef __cplusplus
