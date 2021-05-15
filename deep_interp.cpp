@@ -3,9 +3,11 @@
 //
 
 #include "interp.h"
+#include <math.c>
 #include "loader.cpp"
 #include "opcode.h"
 #include <stdio.h>
+#include <math.h>
 using namespace std;
 
 
@@ -72,10 +74,107 @@ void exec_instructions(DEEPExecEnv* env){
                 break;
             }
             case i32_const:{
-                ip++;
                 uint32_t temp = read_leb_u32(&ip);
                 pushU32(temp);
+                ip++;
                 break;
+            }
+            case i32_rems:{
+                ip++;
+                int32_t a = popS32();
+                int32_t b = popS32();
+                pushS32(a%b);
+                break;
+            }
+            case i32_and:{
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(a&b);
+                break;
+            }
+            case i32_or:{
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(a|b);
+                break;
+            }
+            case i32_xor:{
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(a^b);
+                break;
+            }
+            case i32_shl:{
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(a<<(b%32));
+                break;
+            }
+            case i32_shrs:
+            case i32_shru:{
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(a>>(b%32));
+                break;
+            }
+            case f32_add:{
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushF32(a+b);
+                break;
+            }
+            case f32_sub:{
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushF32(a-b);
+                break;
+            }
+            case f32_mul:{
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushF32(a*b);
+                break;
+            }
+            case f32_div:{
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushF32(a/b);
+                break;
+            }
+            case f32_min:{
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushF32(a<b?a:b);
+                break;
+            }
+            case f32_max:{
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushF32(a>b?a:b);
+                break; 
+            }
+            case f32_copysign:{
+                ip++;
+                float a =popF32();
+                float b =popF32();
+                pushF32(copysign(a,b));
+                break;
+            }
+            case i32_eqz:{
+                ip++;
+                uint32_t a = popU32();
+                pushU32(a==0?1:0);
             }
         }
         //检查操作数栈是否溢出
