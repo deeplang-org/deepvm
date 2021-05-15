@@ -10,30 +10,30 @@
 int32_t main(int argv, char ** args) {
     char* path;
     if(argv==1){
-        printf("no file input!\r\n");
+        error("no file input!");
     }else{
         path = args[1];
     }
 	uint8_t* q = (uint8_t *) malloc(WASM_FILE_SIZE);
 	uint8_t* p = q;
     if (p == NULL) {
-        printf("malloc fail.\r\n");
+        error("malloc fail.");
         return -1;
     }
 
     FILE *fp = fopen(path, "rb"); /* read wasm file with binary mode */
     if(fp == NULL) {
-        printf("file open fail.\r\n");
+        error("file open fail.");
         return -1;
     }
 	int32_t size = fread(p, 1, WASM_FILE_SIZE, fp);
     if (size == 0) {
-        printf ("fread faill.\r\n");
+        error ("fread faill.");
         return -1;
     }
 	DEEPModule* module = deep_load(&p, size);
     if (module == NULL) {
-        printf("load fail.\r\n");
+        error("load fail.");
         return -1;
     }
     //创建操作数栈

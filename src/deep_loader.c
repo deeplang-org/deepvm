@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "deep_loader.h"
+#include "deep_log.h"
 
 //read a value of specified type
 #define READ_VALUE(Type, p) \
@@ -49,21 +50,27 @@ static char* str_gen(const char* p, int32_t len) {
 }
 
 //解析出每个section的开始和大小和类型，拉成一个链表， 从第二项开始存
-static bool create_section_list(const uint8_t** p, int32_t size, section_listnode* section_list) {
+static section_listnode* create_section_list(const uint8_t** p, int32_t size) {
 	const uint8_t *buf = *p, *buf_end = buf + size;
+	section_listnode* section_list = NULL;
+	section_listnode* current_section = NULL;
 	while (buf < buf_end) {
 		section_listnode* section = (section_listnode*)malloc(sizeof(section_listnode));
 		memset(section, 0, sizeof(section_listnode));
+		if (section_list == NULL) {
+			section_list = section;
+			current_section = section;
+		}
 		section->section_type  = READ_BYTE(buf);
 		section->section_size  = read_leb_u32((uint8_t**)&buf);
 		section->section_begin = (uint8_t*)buf;
 		buf += section->section_size;
-		section_list->next = section;
-		section_list       = section;
+		current_section->next = section;
+		current_section       = section;
 	}
 	if (buf == buf_end)
-		return true;
-	return false;
+		return section_list;
+	return NULL;
 }
 
 //读取类型段
@@ -214,18 +221,24 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
 }
 
 
-DEEPModule* deep_load(uint8_t** p, int size) {
-	if (!check_magic_number_and_version(p))
+ DEEPModule* deep_load(uint8_t** p, int size) {
+	if (!check_magic_number_and_version(p)) {
+		error("magic number error");
 		return NULL;
-	section_listnode* section_list = (section_listnode*)malloc(sizeof(section_list));
-	memset(section_list, 0, sizeof(section_list));
+	}
+	section_listnode* section_list = create_section_list((const uint8_t**)p, size);
+	if(section_list == NULL) {
+		error("create section list fail");
+		return NULL;
+	}
 	size -= 8;
-	create_section_list((const uint8_t**)p, size, section_list);
-
 	DEEPModule* module = (DEEPModule*)malloc(sizeof(DEEPModule));
+	if(module == NULL) {
+		error("module malloc fail");
+		return NULL;
+	}
 	memset(module, 0, sizeof(module));
-	decode_each_sections(module, section_list->next);
-
+	decode_each_sections(module, section_list);
 	section_listnode* dummy = section_list, *q;
 	while(dummy != NULL) {
 		q = dummy->next;
