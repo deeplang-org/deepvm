@@ -26,12 +26,14 @@ typedef struct DEEPExecEnv {
     struct DEEPInterpFrame* cur_frame;//当前函数帧
     uint32_t *sp_end;//操作数栈大小
     uint32_t *sp;//sp指针
+    uint32_t *vars;//函数局部变量
 } DEEPExecEnv;
 
 
 //创建操作数栈
 DEEPStack *stack_cons(void);
 int32_t call_main(DEEPExecEnv* current_env, DEEPModule* module);
+void call_function(DEEPExecEnv* current_env, DEEPModule* module, int func_index);
 #endif /* _DEEP_INTERP_H */
 
 

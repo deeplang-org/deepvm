@@ -5,6 +5,8 @@
 #define _DEEP_OPCODE_H
 enum DEEPOpcode {
     op_end = 0x0b,
+    op_call = 0x10,
+    op_local_get = 0x20,
     //常数指令
     i32_const = 0x41,
     f32_const = 0x42,

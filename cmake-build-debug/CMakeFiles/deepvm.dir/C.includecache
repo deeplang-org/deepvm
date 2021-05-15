@@ -14,26 +14,6 @@ deep_loader.h
 
 ../include/deep_log.h
 
-../include/deep_opcode.h
-
-/mnt/d/githubProjects/deepvm_developing/src/deep_interp.c
-stdio.h
--
-stdlib.h
--
-stdint.h
--
-math.h
--
-string.h
--
-deep_interp.h
-/mnt/d/githubProjects/deepvm_developing/src/deep_interp.h
-deep_loader.h
-/mnt/d/githubProjects/deepvm_developing/src/deep_loader.h
-deep_opcode.h
-/mnt/d/githubProjects/deepvm_developing/src/deep_opcode.h
-
 /mnt/d/githubProjects/deepvm_developing/src/deep_main.c
 stdio.h
 -
