@@ -1,7 +1,8 @@
 //
 // Created by xj on 2021/3/30.
 //
-
+#ifndef _DEEP_OPCODE_H
+#define _DEEP_OPCODE_H
 enum DEEPOpcode {
     op_end = 0x0b,
     //常数指令
@@ -56,3 +57,5 @@ enum DEEPOpcode {
     i32_ges = 0x4e,
     i32_geu = 0x4f,
 };
+
+#endif /* _DEEP_OPCODE_H */

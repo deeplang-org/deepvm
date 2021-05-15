@@ -4,8 +4,8 @@
  * Date:4/10/2021
  */
 
-#ifndef _DEEPLOADER_H
-#define _DEEPLOADER_H
+#ifndef _DEEP_LOADER_H
+#define _DEEP_LOADER_H
 
 //
 #define MAGIC_NUMBER 0x6d736100
@@ -29,16 +29,16 @@
 //type item
 typedef struct DEEPType
 {
-    int param_count;
-    int ret_count;
-    char type[1];
+    int32_t param_count;
+    int32_t ret_count;
+    uint8_t type[1];
 } DEEPType;
 
 //local variables item
 typedef struct LocalVars
 {
-    int count;
-    short local_type;
+    int32_t count;
+    int16_t local_type;
 } LocalVars;
 
 //function item
@@ -46,25 +46,25 @@ typedef struct DEEPFunction
 {
     DEEPType *func_type; // the type of function
     LocalVars **localvars;
-    int code_size;
-    char *code_begin;
+    int32_t code_size;
+    uint8_t *code_begin;
 } DEEPFunction;
 
 //
 typedef struct DEEPExport
 {
     char* name;
-    int index;
+    int32_t index;
     char tag;
-};
+} DEEPExport;
 
 /* Data structure of module, at present we only support 
 two sections, which can make the program run*/
 typedef struct DEEPModule
 {
-    int type_count;
-    int function_count;
-    int export_count;
+    int32_t type_count;
+    int32_t function_count;
+    int32_t export_count;
     DEEPType **type_section;
     DEEPFunction **func_section;
     DEEPExport **export_section;
@@ -73,10 +73,12 @@ typedef struct DEEPModule
 //the difinition of listnode
 typedef struct section_listnode
 {
-    char section_type;
-    int section_size;
-    char *section_begin;
+    uint8_t section_type;
+    int32_t section_size;
+    uint8_t *section_begin;
     struct section_listnode *next;
 } section_listnode;
 
-#endif
+DEEPModule* deep_load(uint8_t** p, int32_t size);
+int32_t read_leb_u32(uint8_t** p);
+#endif /* _DEEP_LOADER_H */
