@@ -6,8 +6,13 @@
 #include "deep_loader.h"
 #define WASM_FILE_SIZE 1024
 
-int32_t main() {
-    const char* path = "program.wasm";
+int32_t main(int argv,char ** args) {
+    char* path;
+    if(argv==1){
+        printf("no file input!\r\n");
+    }else{
+        path = args[1];
+    }
 	uint8_t* p = (uint8_t *) malloc(WASM_FILE_SIZE);
     if (p == NULL) {
         printf("malloc fail.\r\n");

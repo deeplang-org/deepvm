@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/deep_interp.h
+deep_loader.h
+../include/deep_loader.h
+
+../include/deep_loader.h
+
+../include/deep_opcode.h
+
+/Users/apple/deepvm_developing/src/deep_interp.c
+stdio.h
+-
+stdlib.h
+-
+stdint.h
+-
+math.h
+-
+deep_interp.h
+/Users/apple/deepvm_developing/src/deep_interp.h
+deep_loader.h
+/Users/apple/deepvm_developing/src/deep_loader.h
+deep_opcode.h
+/Users/apple/deepvm_developing/src/deep_opcode.h
+
