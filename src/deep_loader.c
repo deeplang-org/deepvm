@@ -19,13 +19,29 @@
 #define READ_BYTE(p) READ_VALUE(uint8_t, p)
 
 //解码一个无符号32位或64整型，目前只会用到32位类型,在大多数实现中占5个字节
-int32_t read_leb_u32(uint8_t** p) {
+uint32_t read_leb_u32(uint8_t** p) {
 	uint8_t* buf = *p;
-	int32_t   res = 0;
-	for (int32_t i = 0; i < 7; i++) {
-		res |= (buf[i] & 0x7f) << (i * 7); //出错了，忘记加‘|’
+	uint32_t   res = 0;
+	for (int32_t i = 0; i < 10; i++) {
+		res |= (buf[i] & 0x7f) << (i * 7); 
 		if ((buf[i] & 0x80) == 0) {
 			*p += i + 1;
+			return res;
+		}
+	}
+	return 0;
+}
+
+int32_t read_leb_i32(uint8_t** p) {
+	uint8_t* buf = *p;
+	int32_t res = 0;
+	for (int32_t i = 0; i < 10; i++) {
+		res |= (buf[i] & 0x7f) << (i * 7); 
+		if ((buf[i] & 0x80) == 0) {
+			*p += i + 1;
+			if((buf[i] & 0x40) != 0) {
+				res = res | (-1 << ((i + 1) * 7));
+			}
 			return res;
 		}
 	}
