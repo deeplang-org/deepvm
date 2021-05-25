@@ -382,3 +382,4 @@ void type_section_dump(DEEPModule* module) {
 	}
 	printf("%s\n", "========================================================");
 }
+
