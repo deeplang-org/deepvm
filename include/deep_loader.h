@@ -90,7 +90,8 @@ typedef struct section_listnode
 } section_listnode;
 
 DEEPModule* deep_load(uint8_t** p, int32_t size);
-int32_t read_leb_u32(uint8_t** p);
+uint32_t read_leb_u32(uint8_t** p);
+int32_t read_leb_i32(uint8_t** p);
 uint8_t* init_memory(uint32_t min_page);
 uint8_t read_mem8(uint8_t* mem, uint32_t offset);
 uint16_t read_mem16(uint8_t* mem, uint32_t offset);
