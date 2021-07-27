@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "deep_interp.h"
 #include "deep_loader.h"
 #include "deep_log.h"
@@ -16,6 +17,7 @@ int32_t main(int argv, char **args) {
         path = args[1];
     }
     uint8_t *q = (uint8_t *) malloc(WASM_FILE_SIZE);
+    memset(q, 0, WASM_FILE_SIZE); // Suppress valgrind warning
     uint8_t *p = q;
     if (p == NULL) {
         error("malloc fail.");
@@ -53,9 +55,10 @@ int32_t main(int argv, char **args) {
 
     /* release memory */
     fclose(fp);
-    free(stack);
-    free(module);
+    stack_free(stack);
+    module_free(module);
     free(current_env->global_vars);
+    free(current_env->memory);
     free(q);
     p = NULL;
     return 0;

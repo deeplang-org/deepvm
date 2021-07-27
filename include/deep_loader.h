@@ -29,16 +29,16 @@
 //type item
 typedef struct DEEPType
 {
-    int32_t param_count;
-    int32_t ret_count;
+    uint32_t param_count;
+    uint32_t ret_count;
     uint8_t type[1];
 } DEEPType;
 
 //local variables item
 typedef struct LocalVars
 {
-    int32_t count;
-    int16_t local_type;
+    uint32_t count;
+    uint8_t local_type;
 } LocalVars;
 
 //function item
@@ -46,7 +46,7 @@ typedef struct DEEPFunction
 {
     DEEPType *func_type; // the type of function
     LocalVars **localvars;
-    int32_t code_size;
+    uint32_t code_size;
     uint8_t *code_begin;
 } DEEPFunction;
 
@@ -54,15 +54,15 @@ typedef struct DEEPFunction
 typedef struct DEEPExport
 {
     char* name;
-    int32_t index;
+    uint32_t index;
     char tag;
 } DEEPExport;
 
 //
 typedef struct DEEPData
 {
-    int32_t offset;
-    int32_t datasize;
+    uint32_t offset;
+    uint32_t datasize;
     uint8_t *data;
 } DEEPData;
 
@@ -70,10 +70,10 @@ typedef struct DEEPData
 two sections, which can make the program run*/
 typedef struct DEEPModule
 {
-    int32_t type_count;
-    int32_t function_count;
-    int32_t export_count;
-    int32_t data_count;
+    uint32_t type_count;
+    uint32_t function_count;
+    uint32_t export_count;
+    uint32_t data_count;
     DEEPType **type_section;
     DEEPFunction **func_section;
     DEEPExport **export_section;
@@ -90,6 +90,7 @@ typedef struct section_listnode
 } section_listnode;
 
 DEEPModule* deep_load(uint8_t** p, int32_t size);
+void module_free(DEEPModule *module);
 uint32_t read_leb_u32(uint8_t** p);
 int32_t read_leb_i32(uint8_t** p);
 uint8_t* init_memory(uint32_t min_page);

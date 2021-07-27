@@ -40,6 +40,12 @@ DEEPStack *stack_cons(void) {
     return stack;
 }
 
+//销毁操作数栈
+void stack_free(DEEPStack *stack) {
+    free(stack->sp);
+    free(stack);
+}
+
 //执行代码块指令
 void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
     uint32_t *sp = current_env->cur_frame->sp;
@@ -279,14 +285,14 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
 
     //函数类型
     DEEPType *deepType = func->func_type;
-    int param_num = deepType->param_count;
-    int ret_num = deepType->ret_count;
+    uint32_t param_num = deepType->param_count;
+    uint32_t ret_num = deepType->ret_count;
 
 //    current_env->sp-=param_num;//操作数栈指针下移
     current_env->local_vars = (uint32_t *) malloc(sizeof(uint32_t) * param_num);
-    int vars_temp = param_num;
+    uint32_t vars_temp = param_num;
     while (vars_temp > 0) {
-        int temp = *(--current_env->sp);
+        uint32_t temp = *(--current_env->sp);
         current_env->local_vars[(vars_temp--) - 1] = temp;
     }
 
@@ -324,8 +330,8 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     //create DEEPFunction for main
     //find the index of main
     int main_index = -1;
-    int export_count = module->export_count;
-    for (int i = 0; i < export_count; i++) {
+    uint32_t export_count = module->export_count;
+    for (uint32_t i = 0; i < export_count; i++) {
         if (strcmp((module->export_section[i])->name, "main") == 0) {
             main_index = module->export_section[i]->index;
         }

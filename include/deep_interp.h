@@ -36,10 +36,11 @@ typedef struct DEEPExecEnv {
 //创建操作数栈
 DEEPStack *stack_cons(void);
 
+//销毁操作数栈
+void stack_free(DEEPStack *stack);
+
 int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module);
 
 void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index);
 
 #endif /* _DEEP_INTERP_H */
-
-
