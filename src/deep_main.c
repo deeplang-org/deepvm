@@ -6,18 +6,27 @@
 #include "deep_interp.h"
 #include "deep_loader.h"
 #include "deep_log.h"
+#include "deep_mem.h"
 
 #define WASM_FILE_SIZE 1024
 
+// 能分配的总空间大小（整个解释器用到的stack之外的空间全部算在里面）
+#define MEM_SIZE (2 * PAGESIZE)
+
+// 声明deepmem的空间
+uint8_t deepmem[MEM_SIZE] = {0};
+
 int32_t main(int argv, char **args) {
+    // 初始化deepmem
+    deep_mem_init(deepmem, MEM_SIZE);
+
     char *path;
     if(argv==1){
         error("no file input!");
     }else{
         path = args[1];
     }
-    uint8_t *q = (uint8_t *) malloc(WASM_FILE_SIZE);
-    memset(q, 0, WASM_FILE_SIZE); // Suppress valgrind warning
+    uint8_t *q = (uint8_t *) deep_malloc(WASM_FILE_SIZE);
     uint8_t *p = q;
     if (p == NULL) {
         error("malloc fail.");
@@ -46,7 +55,7 @@ int32_t main(int argv, char **args) {
     DEEPExecEnv *current_env = &deep_env;
     current_env->sp_end = stack->sp_end;
     current_env->sp = stack->sp;
-    current_env->global_vars = (uint32_t *) malloc(sizeof(uint32_t) * 100);
+    current_env->global_vars = (uint32_t *) deep_malloc(sizeof(uint32_t) * 100);
     current_env->memory = init_memory(1);
     int32_t ans = call_main(current_env, module);
 
@@ -57,9 +66,9 @@ int32_t main(int argv, char **args) {
     fclose(fp);
     stack_free(stack);
     module_free(module);
-    free(current_env->global_vars);
-    free(current_env->memory);
-    free(q);
+    deep_free(current_env->global_vars);
+    deep_free(current_env->memory);
+    deep_free(q);
     p = NULL;
     return 0;
 }

@@ -25,6 +25,9 @@
 #define SECTION_TYPE_CODE 10
 #define SECTION_TYPE_DATA 11
 
+//内存模块实现
+#define PAGESIZE 65536
+
 //
 //type item
 typedef struct DEEPType
