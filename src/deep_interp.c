@@ -8,6 +8,7 @@
 #include <string.h>
 #include "deep_interp.h"
 #include "deep_loader.h"
+#include "deep_mem.h"
 #include "deep_opcode.h"
 
 #define popS32() (int32_t)*(--sp)
@@ -26,13 +27,13 @@
 
 //创建操作数栈
 DEEPStack *stack_cons(void) {
-    DEEPStack *stack = (DEEPStack *) malloc(sizeof(DEEPStack));
+    DEEPStack *stack = (DEEPStack *) deep_malloc(sizeof(DEEPStack));
     if (stack == NULL) {
         printf("Operand stack creation failed!\r\n");
         return NULL;
     }
     stack->capacity = STACK_CAPACITY;
-    stack->sp = (uint32_t *) malloc(sizeof(uint32_t) * STACK_CAPACITY);
+    stack->sp = (uint32_t *) deep_malloc(sizeof(uint32_t) * STACK_CAPACITY);
     if (stack->sp == NULL) {
         printf("Malloc area for stack error!\r\n");
     }
@@ -42,8 +43,8 @@ DEEPStack *stack_cons(void) {
 
 //销毁操作数栈
 void stack_free(DEEPStack *stack) {
-    free(stack->sp);
-    free(stack);
+    deep_free(stack->sp);
+    deep_free(stack);
 }
 
 //执行代码块指令
@@ -289,7 +290,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     uint32_t ret_num = deepType->ret_count;
 
 //    current_env->sp-=param_num;//操作数栈指针下移
-    current_env->local_vars = (uint32_t *) malloc(sizeof(uint32_t) * param_num);
+    current_env->local_vars = (uint32_t *) deep_malloc(sizeof(uint32_t) * param_num);
     uint32_t vars_temp = param_num;
     while (vars_temp > 0) {
         uint32_t temp = *(--current_env->sp);
@@ -300,7 +301,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     LocalVars **locals = func->localvars;
 
     //为func函数创建帧
-    DEEPInterpFrame *frame = (DEEPInterpFrame *) malloc(sizeof(DEEPInterpFrame));
+    DEEPInterpFrame *frame = (DEEPInterpFrame *) deep_malloc(sizeof(DEEPInterpFrame));
     if (frame == NULL) {
         printf("Malloc area for normal_frame error!\r\n");
     }
@@ -319,8 +320,8 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     //执行完毕退栈
     current_env->cur_frame = frame->prev_frame;
     //释放掉局部变量
-    free(current_env->local_vars);
-    free(frame);
+    deep_free(current_env->local_vars);
+    deep_free(frame);
     return;
 }
 
@@ -345,7 +346,7 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     DEEPFunction *main_func = module->func_section[main_index];//module.start_index记录了main函数索引
 
     //为main函数创建帧
-    DEEPInterpFrame *main_frame = (DEEPInterpFrame *) malloc(sizeof(struct DEEPInterpFrame));
+    DEEPInterpFrame *main_frame = (DEEPInterpFrame *) deep_malloc(sizeof(struct DEEPInterpFrame));
     if (main_frame == NULL) {
         printf("Malloc area for main_frame error!\r\n");
     }
@@ -359,7 +360,7 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     //执行frame中函数
     //sp要下移，栈顶元素即为函数参数
     exec_instructions(current_env, module);
-    free(main_frame);
+    deep_free(main_frame);
 
     //返回栈顶元素
     return *(current_env->sp - 1);
