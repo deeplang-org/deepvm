@@ -10,6 +10,7 @@
 #include "deep_loader.h"
 #include "deep_mem.h"
 #include "deep_opcode.h"
+#include "deep_log.h"
 
 #define popS32() (int32_t)*(--sp)
 #define popF32() (float)*(--sp)
@@ -29,13 +30,13 @@
 DEEPStack *stack_cons(void) {
     DEEPStack *stack = (DEEPStack *) deep_malloc(sizeof(DEEPStack));
     if (stack == NULL) {
-        printf("Operand stack creation failed!\r\n");
+        deep_error("Operand stack creation failed!");
         return NULL;
     }
     stack->capacity = STACK_CAPACITY;
     stack->sp = (uint32_t *) deep_malloc(sizeof(uint32_t) * STACK_CAPACITY);
     if (stack->sp == NULL) {
-        printf("Malloc area for stack error!\r\n");
+        deep_error("Malloc area for stack error!");
     }
     stack->sp_end = stack->sp + stack->capacity;
     return stack;
@@ -303,7 +304,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     //为func函数创建帧
     DEEPInterpFrame *frame = (DEEPInterpFrame *) deep_malloc(sizeof(DEEPInterpFrame));
     if (frame == NULL) {
-        printf("Malloc area for normal_frame error!\r\n");
+        deep_error("Malloc area for normal_frame error!");
     }
     //初始化
     frame->sp = current_env->sp;
@@ -338,7 +339,7 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
         }
     }
     if (main_index < 0) {
-        printf("the main function index failed!\r\n");
+        deep_error("the main function index failed!");
         return -1;
     }
 
@@ -348,7 +349,7 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     //为main函数创建帧
     DEEPInterpFrame *main_frame = (DEEPInterpFrame *) deep_malloc(sizeof(struct DEEPInterpFrame));
     if (main_frame == NULL) {
-        printf("Malloc area for main_frame error!\r\n");
+        deep_error("Malloc area for main_frame error!");
     }
     //初始化
     main_frame->sp = current_env->sp;

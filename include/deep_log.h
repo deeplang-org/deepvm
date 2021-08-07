@@ -42,6 +42,12 @@ void log_data(const char *pFileName, unsigned int uiLine, const char* pFuncName,
 #define deep_info(...)                              log_printf(__FILE__, __LINE__,__FUNCTION__,"<info>",__VA_ARGS__)
 #define deep_dump(pcStr,pucBuf,usLen)               log_data(__FILE__, __LINE__,__FUNCTION__,pcStr,pucBuf,usLen)
 
+// #define DBG
+#ifdef DBG
+#define PRINT_ARG(FSTRING, ARG) do {printf(FSTRING, ARG); fflush(stdout);} while (0)
+#else
+#define PRINT_ARG(FSTRING, ARG) ((void *)0)
+#endif
 
 
 #ifdef __cplusplus
