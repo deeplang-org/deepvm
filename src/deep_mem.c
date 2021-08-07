@@ -7,14 +7,6 @@
 #include "deep_mem.h"
 #include "deep_log.h"
 
-// #define DBG
-
-#ifdef DBG
-#define PRINT_ARG(FSTRING, ARG) do {printf(FSTRING, ARG); fflush(stdout);} while (0)
-#else
-#define PRINT_ARG(FSTRING, ARG) ((void *)0)
-#endif
-
 mem_pool_t *pool;
 
 /*
@@ -163,7 +155,6 @@ bool deep_mem_init (void *mem, uint32_t size)
   // initialise remainder block's head
   block_set_A_flag (pool->remainder_block_head, false);
   block_set_P_flag (pool->remainder_block_head, true);
-
   return true;
 }
 

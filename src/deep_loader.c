@@ -255,18 +255,18 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
 
 DEEPModule* deep_load(uint8_t** p, int size) {
 	if (!check_magic_number_and_version(p)) {
-		error("magic number error");
+		deep_error("magic number error");
 		return NULL;
 	}
 	section_listnode* section_list = create_section_list((const uint8_t**)p, size);
 	if(section_list == NULL) {
-		error("create section list fail");
+		deep_error("create section list fail");
 		return NULL;
 	}
 	size -= 8;
 	DEEPModule* module = (DEEPModule*)deep_malloc(sizeof(DEEPModule));
 	if(module == NULL) {
-		error("module malloc fail");
+		deep_error("module malloc fail");
 		return NULL;
 	}
 	decode_each_sections(module, section_list);
@@ -363,22 +363,6 @@ void write_mem64(uint8_t* mem, uint64_t val, uint32_t offset) {
 	buf[0] = val;
 	write_memory(mem, buf, offset, 8);
 }
-
-// DEEPModule* module = deep_load(&p, size);
-//DOING：开发dump指令，方便后续调试程序
-
-// void print_type(uint8_t t) {
-// 	switch (t)
-// 	{
-// 	case :
-		
-// 		break;
-	
-// 	default:
-// 		error("not correct parameter type");
-// 		break;
-// 	}
-// }
 
 void type_section_dump(DEEPModule* module) {
 	uint32_t i, j = 0;
