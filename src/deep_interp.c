@@ -1,13 +1,14 @@
 //
 // Created by xj on 2021/3/30.
 //
+#include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <math.h>
 #include <string.h>
 #include "deep_interp.h"
 #include "deep_loader.h"
+#include "deep_log.h"
 #include "deep_mem.h"
 #include "deep_opcode.h"
 #include "deep_log.h"
@@ -25,6 +26,12 @@
 #define READ_BYTE(p) READ_VALUE(uint8_t, p)
 
 #define STACK_CAPACITY 100
+
+// 安全除法
+#define DIVIDE(TYPE, DIVIDEND, DIVISOR) \
+(((TYPE)DIVISOR == 0) && \
+    (error("Arithmetic Error: Divide by Zero!"), exit(1), 0) \
+        || (TYPE)DIVIDEND / (TYPE)DIVISOR)
 
 //创建操作数栈
 DEEPStack *stack_cons(void) {
@@ -158,14 +165,14 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 int32_t a = popS32();
                 int32_t b = popS32();
-                pushS32(b / a);
+                pushS32(DIVIDE(int32_t, b, a));
                 break;
             }
             case i32_divu: {
                 ip++;
                 uint32_t a = popU32();
                 uint32_t b = popU32();
-                pushU32(b / a);
+                pushU32(DIVIDE(uint32_t, b, a));
                 break;
             }
             case i32_const: {
@@ -242,7 +249,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 float a = popF32();
                 float b = popF32();
-                pushF32(b / a);
+                pushF32(DIVIDE(float, b, a));
                 break;
             }
             case f32_min: {
