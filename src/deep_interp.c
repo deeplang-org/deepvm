@@ -11,7 +11,6 @@
 #include "deep_log.h"
 #include "deep_mem.h"
 #include "deep_opcode.h"
-#include "deep_log.h"
 
 #define popS32() (int32_t)*(--sp)
 #define popF32() (float)*(--sp)
@@ -30,8 +29,8 @@
 // 安全除法
 #define DIVIDE(TYPE, DIVIDEND, DIVISOR) \
 (((TYPE)DIVISOR == 0) && \
-    (error("Arithmetic Error: Divide by Zero!"), exit(1), 0) \
-        || (TYPE)DIVIDEND / (TYPE)DIVISOR)
+    (deep_error("Arithmetic Error: Divide by Zero!"), exit(1), 0), \
+        (TYPE)DIVIDEND / (TYPE)DIVISOR)
 
 //创建操作数栈
 DEEPStack *stack_cons(void) {
@@ -177,7 +176,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             }
             case i32_const: {
                 ip++;
-                uint32_t temp = read_leb_u32(&ip);
+                uint32_t temp = read_leb_i32(&ip);
                 pushU32(temp);
                 break;
             }
