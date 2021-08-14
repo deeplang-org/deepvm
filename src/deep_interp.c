@@ -227,7 +227,6 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 float a = popF32();
                 float b = popF32();
-                                puts("f");
                 pushF32(b + a);
                 break;
             }
