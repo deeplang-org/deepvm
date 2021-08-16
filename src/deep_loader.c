@@ -49,6 +49,13 @@ int32_t read_leb_i32(uint8_t** p) {
 	return 0;
 }
 
+float read_ieee_32(uint8_t **p) {
+	// TODO: Support big-endian machines.
+	float res = *(float *)(*p);
+	*p += 4;
+	return res;
+}
+
 //检查魔数和版本号
 static bool check_magic_number_and_version(uint8_t** p) {
 	uint32_t magic_number = 0, version = 0;
