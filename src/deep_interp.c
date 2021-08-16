@@ -12,11 +12,11 @@
 #include "deep_mem.h"
 #include "deep_opcode.h"
 
-#define popS32() (int32_t)*(--sp)
-#define popF32() (float)*(--sp)
-#define popU32() (uint32_t)*(--sp)
-#define pushS32(x)  *(sp) = (int32_t)(x);sp++
-#define pushF32(x) *(sp) = (float)(x);sp++
+#define popS32() (*(int32_t *)(--sp))
+#define popF32() (*(float *)(--sp))
+#define popU32() (*(uint32_t *)(--sp))
+#define pushS32(x) *(sp) = (int32_t)(x);sp++
+#define pushF32(x) do {float __x = (float)x;*(sp) = *(int32_t *)(&__x);sp++;} while (0)
 #define pushU32(x) *(sp) = (uint32_t)(x);sp++
 
 #define READ_VALUE(Type, p) \
@@ -79,23 +79,25 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 break;
             }
             //内存指令
-            case i32_load:{
+            case i32_load: {
                 ip++;
                 uint32_t base = popU32();
                 uint32_t align = read_leb_u32(&ip);
                 ip++;
                 uint32_t offset = read_leb_u32(&ip);
-                uint32_t number = read_mem32(memory+base,offset);
+                uint32_t number = read_mem32(memory+base, offset);
                 pushU32(number);
+                break;
             }
-            case i32_store:{
+            case i32_store: {
                 ip++;
                 uint32_t base = popU32();
                 uint32_t align = read_leb_u32(&ip);
                 ip++;
                 uint32_t offset = read_leb_u32(&ip);
                 uint32_t number = popU32();
-                write_mem32(memory+base,number,offset);
+                write_mem32(memory+base, number,offset);
+                break;
             }
             case op_local_get: {
                 ip++;
@@ -272,8 +274,40 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushF32(copysign(b, a));
                 break;
             }
-            default:
+            case f32_const: {
+                ip++;
+                float temp = read_ieee_32(&ip);
+                pushF32(temp);
                 break;
+            }
+            // 类型转换
+            case i32_trunc_f32_s: {
+                ip++;
+                int32_t temp = (int32_t)popF32();
+                pushS32(temp);
+                break;
+            }
+            case i32_trunc_f32_u: {
+                ip++;
+                uint32_t temp = (uint32_t)popF32();
+                pushU32(temp);
+                break;
+            }
+            case f32_convert_i32_s: {
+                ip++;
+                float temp = (float)popS32();
+                pushF32(temp);
+                break;
+            }
+            case f32_convert_i32_u: {
+                ip++;
+                float temp = (float)popU32();
+                pushF32(temp);
+                break;
+            }
+            default:
+                deep_error("Unknown opcode %x!", opcode);
+                exit(1);
         }
         //检查操作数栈是否溢出
         if (sp > current_env->sp_end) {

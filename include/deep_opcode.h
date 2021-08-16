@@ -17,7 +17,7 @@ enum DEEPOpcode {
     i32_store = 0x36,
     //常数指令
     i32_const = 0x41,
-    f32_const = 0x42,
+    f32_const = 0x43,
     //测试指令
     i32_eqz = 0x54,
     //二元整数算数指令
@@ -48,11 +48,11 @@ enum DEEPOpcode {
     i32_clz = 0x67,
     i32_ctz = 0x68,
     i32_popcnt = 0x69,
-    f32_abs = 0x8b,
-    f32_neg = 0x8c,
-    f32_ceil = 0x8d,
-    f32_floor = 0x8e,
-    f32_trunc = 0x8f,
+    f32_abs = 0x8B,
+    f32_neg = 0x8C,
+    f32_ceil = 0x8D,
+    f32_floor = 0x8E,
+    f32_trunc = 0x8F,
     f32_nearest = 0x90,
     f32_sqrt = 0x91,
     //比较指令
@@ -60,12 +60,17 @@ enum DEEPOpcode {
     i32_ne = 0x47,
     i32_its = 0x48,
     i32_itu = 0x49,
-    i32_gts = 0x4a,
-    i32_gtu = 0x4b,
-    i32_les = 0x4c,
-    i32_leu = 0x4d,
-    i32_ges = 0x4e,
-    i32_geu = 0x4f,
+    i32_gts = 0x4A,
+    i32_gtu = 0x4B,
+    i32_les = 0x4C,
+    i32_leu = 0x4D,
+    i32_ges = 0x4E,
+    i32_geu = 0x4F,
+    //转换指令
+    i32_trunc_f32_s = 0xA8,
+    i32_trunc_f32_u = 0xA9,
+    f32_convert_i32_s = 0xB2,
+    f32_convert_i32_u = 0xB3,
 };
 
 #endif /* _DEEP_OPCODE_H */
