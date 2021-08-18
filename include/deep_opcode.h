@@ -4,7 +4,18 @@
 #ifndef _DEEP_OPCODE_H
 #define _DEEP_OPCODE_H
 enum DEEPOpcode {
-    op_end = 0x0b,
+    /* control */
+    op_unreachable = 0x00,
+    op_nop = 0x01,
+    op_block = 0x02,
+    op_loop = 0x03,
+    op_if = 0x04,
+    op_else = 0x05,
+    op_end = 0x0B,
+    op_br = 0x0C,
+    op_br_if = 0x0D,
+    op_br_table = 0x0E,
+    op_return = 0x0F,
     op_call = 0x10,
     //变量指令
     op_local_get = 0x20,

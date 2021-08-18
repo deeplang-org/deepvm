@@ -65,6 +65,20 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
         switch (opcode) {
+            case op_unreachable: {
+                /* throw exeception */
+                break;
+            }
+            case op_nop: {
+                /* do nothing */
+                break;
+            }
+            case op_block: {
+                break;
+            }
+            case op_br_if: {
+                break;
+            }
             case op_end: {
                 ip++;
                 break;
