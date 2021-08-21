@@ -48,9 +48,10 @@ typedef struct LocalVars
 typedef struct DEEPFunction
 {
     DEEPType *func_type; // the type of function
-    LocalVars **localvars;
+    LocalVars **local_vars;
     uint32_t code_size;
     uint8_t *code_begin;
+    uint8_t local_vars_count;
 } DEEPFunction;
 
 //
