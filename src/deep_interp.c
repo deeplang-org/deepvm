@@ -59,18 +59,21 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
     uint32_t *sp = current_env->cur_frame->sp;
     uint8_t *ip = current_env->cur_frame->function->code_begin;
     uint8_t *ip_end = ip + current_env->cur_frame->function->code_size - 1;
-    uint32_t *memory = current_env ->memory;
+    uint32_t *memory = current_env->memory;
+
     while (ip < ip_end) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
+        // printf("%x\n", opcode);
         switch (opcode) {
             case op_unreachable: {
-                /* throw exeception */
+                deep_error("Runtime Error: Unreachable!");
+                exit(1);
                 break;
             }
             case op_nop: {
-                /* do nothing */
+                ip++;
                 break;
             }
             case op_block: {
@@ -341,10 +344,10 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
 
     //函数类型
     DEEPType *deepType = func->func_type;
-    uint32_t param_num = deepType->param_count;
+    uint32_t param_num = deepType->param_count + func->local_vars_count;
     uint32_t ret_num = deepType->ret_count;
 
-//    current_env->sp-=param_num;//操作数栈指针下移
+    // 分配局部变量的空间
     current_env->local_vars = (uint32_t *) deep_malloc(sizeof(uint32_t) * param_num);
     uint32_t vars_temp = param_num;
     while (vars_temp > 0) {
@@ -353,7 +356,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     }
 
     //局部变量组
-    LocalVars **locals = func->localvars;
+    LocalVars **locals = func->local_vars;
 
     //为func函数创建帧
     DEEPInterpFrame *frame = (DEEPInterpFrame *) deep_malloc(sizeof(DEEPInterpFrame));
@@ -387,6 +390,7 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     //find the index of main
     int main_index = -1;
     uint32_t export_count = module->export_count;
+
     for (uint32_t i = 0; i < export_count; i++) {
         if (strcmp((module->export_section[i])->name, "main") == 0) {
             main_index = module->export_section[i]->index;
@@ -399,6 +403,9 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
 
     //为main函数创建DEEPFunction
     DEEPFunction *main_func = module->func_section[main_index];//module.start_index记录了main函数索引
+    
+    //分配局部变量的空间
+    current_env->local_vars = (uint32_t *)deep_malloc(sizeof(uint32_t) * main_func->local_vars_count);
 
     //为main函数创建帧
     DEEPInterpFrame *main_frame = (DEEPInterpFrame *) deep_malloc(sizeof(struct DEEPInterpFrame));
