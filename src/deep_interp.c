@@ -1,6 +1,7 @@
 //
 // Created by xj on 2021/3/30.
 //
+#include <assert.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -25,6 +26,7 @@
 #define READ_BYTE(p) READ_VALUE(uint8_t, p)
 
 #define STACK_CAPACITY 100
+#define CONTROL_STACK_CAPACITY 100
 
 // 安全除法
 #define DIVIDE(TYPE, DIVIDEND, DIVISOR) \
@@ -52,6 +54,31 @@ DEEPStack *stack_cons(void) {
 void stack_free(DEEPStack *stack) {
     deep_free(stack->sp);
     deep_free(stack);
+}
+
+//创建控制栈
+DEEPControlStack *control_stack_cons(void) {
+    DEEPControlStack *stack = (DEEPControlStack *)deep_malloc(sizeof(DEEPControlStack));
+    if (stack == NULL) {
+        deep_error("Control stack creation failed!");
+        return NULL;
+    }
+    stack->capacity = CONTROL_STACK_CAPACITY;
+    stack->frames = (DEEPInterpFrame **)deep_malloc(sizeof(DEEPInterpFrame *));
+    if (stack->frames == NULL) {
+        deep_error("Control stack creation failed!");
+        deep_free(stack);
+        return NULL;
+    }
+    stack->current_frame_index = 0;
+    return stack;
+}
+
+//销毁控制栈
+void control_stack_free(DEEPControlStack *stack) {
+    assert(stack->current_frame_index == 0);
+    free(stack->frames);
+    free(stack);
 }
 
 //执行代码块指令
@@ -366,17 +393,24 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     //初始化
     frame->sp = current_env->sp;
     frame->function = func;
-    frame->prev_frame = current_env->cur_frame;
+    frame->prev_func_frame = current_env->cur_frame;
+    frame->type = function_frame;
 
     //更新env中内容
     current_env->cur_frame = frame;
+
+    //更新控制栈
+    current_env->control_stack->current_frame_index++;
+    current_env->control_stack->frames[
+        current_env->control_stack->current_frame_index] = frame;
 
     //执行frame中函数
     //sp要下移，栈顶元素即为函数参数
     exec_instructions(current_env, module);
 
     //执行完毕退栈
-    current_env->cur_frame = frame->prev_frame;
+    current_env->cur_frame = frame->prev_func_frame;
+    current_env->control_stack->current_frame_index--;
     //释放掉局部变量
     deep_free(current_env->local_vars);
     deep_free(frame);
@@ -415,10 +449,14 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     //初始化
     main_frame->sp = current_env->sp;
     main_frame->function = main_func;
+    main_frame->type = function_frame;
 
     //更新env中内容
     current_env->cur_frame = main_frame;
 
+    //更新控制栈
+    current_env->control_stack->frames[
+        current_env->control_stack->current_frame_index] = main_frame;
     //执行frame中函数
     //sp要下移，栈顶元素即为函数参数
     exec_instructions(current_env, module);
