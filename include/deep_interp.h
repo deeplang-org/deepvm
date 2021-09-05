@@ -10,11 +10,11 @@
 
 //DEEP帧类型
 typedef enum DEEPFrameType {
-    function_frame,
-    block_frame,
-    if_then_frame,
-    if_else_frame,
-    loop_frame,
+    FUNCTION_FRAME,
+    BLOCK_FRAME,
+    IF_THEN_FRAME,
+    IF_ELSE_FRAME,
+    LOOP_FRAME,
 } DEEPFrameType;
 
 //DEEP帧

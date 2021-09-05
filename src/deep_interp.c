@@ -394,7 +394,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     frame->sp = current_env->sp;
     frame->function = func;
     frame->prev_func_frame = current_env->cur_frame;
-    frame->type = function_frame;
+    frame->type = FUNCTION_FRAME;
 
     //更新env中内容
     current_env->cur_frame = frame;
@@ -449,7 +449,7 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     //初始化
     main_frame->sp = current_env->sp;
     main_frame->function = main_func;
-    main_frame->type = function_frame;
+    main_frame->type = FUNCTION_FRAME;
 
     //更新env中内容
     current_env->cur_frame = main_frame;
