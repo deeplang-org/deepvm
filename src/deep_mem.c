@@ -4,8 +4,15 @@
 #include <string.h>
 #include <stdbool.h>
 #include "random.h"
-#include "deep_mem.h"
 #include "deep_log.h"
+#include "deep_mem.h"
+
+//重要：DeepMem部分的跳表存在bug，因此在修复之前，先启用该宏，切换至C语言原生内存管理
+#define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
+
+#ifdef REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
+#include "stdlib.h"
+#endif
 
 mem_pool_t *pool;
 
@@ -164,6 +171,13 @@ deep_mem_destroy (void)
   pool = NULL;
 }
 
+#ifdef REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
+void *
+deep_malloc(uint32_t size)
+{
+  return malloc(size);
+}
+#else
 void *
 deep_malloc(uint32_t size)
 {
@@ -180,6 +194,7 @@ deep_malloc(uint32_t size)
   }
   return deep_malloc_sorted_bins(aligned_size);
 }
+#endif
 
 /* Note that aligning is done in deep_malloc, the size shoulde already be 
  * aligned here.
@@ -280,6 +295,13 @@ deep_realloc (void *ptr, uint32_t size)
   return NULL;
 }
 
+#ifdef REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
+void
+deep_free (void *ptr)
+{
+  free(ptr);
+}
+#else
 void
 deep_free (void *ptr)
 {
@@ -303,6 +325,7 @@ deep_free (void *ptr)
     deep_free_sorted_bins(head);
   }
 }
+#endif
 
 static void
 deep_free_fast_bins(void *ptr)

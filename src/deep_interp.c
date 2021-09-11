@@ -64,7 +64,7 @@ DEEPControlStack *control_stack_cons(void) {
         return NULL;
     }
     stack->capacity = CONTROL_STACK_CAPACITY;
-    stack->frames = (DEEPInterpFrame **)deep_malloc(sizeof(DEEPInterpFrame *));
+    stack->frames = (DEEPInterpFrame **)deep_malloc(stack->capacity * sizeof(DEEPInterpFrame *));
     if (stack->frames == NULL) {
         deep_error("Control stack creation failed!");
         deep_free(stack);
@@ -77,6 +77,7 @@ DEEPControlStack *control_stack_cons(void) {
 //销毁控制栈
 void control_stack_free(DEEPControlStack *stack) {
     assert(stack->current_frame_index == 0);
+    deep_free(stack->frames);
     deep_free(stack);
 }
 
