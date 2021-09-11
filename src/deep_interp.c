@@ -189,11 +189,14 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
     uint8_t *ip = current_env->cur_frame->function->code_begin;
     uint8_t *ip_end = ip + current_env->cur_frame->function->code_size;
     uint32_t *memory = current_env->memory;
-    while (ip < ip_end) {
+    bool br = false;
+    while (ip < ip_end && !br) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
+        // printf("opcode: %x\n", opcode);
         switch (opcode) {
+            /* 控制指令 */
             case op_unreachable: {
                 deep_error("Runtime Error: Unreachable!");
                 exit(1);
@@ -235,7 +238,15 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 deep_free(block);
                 break;
             }
+            case op_br: {
+                ip++;
+                uint32_t operand = read_leb_u32(&ip);
+                break;
+            }
             case op_br_if: {
+                ip++;
+                uint32_t operand = read_leb_u32(&ip);
+                br = true;
                 break;
             }
             case op_end: {
@@ -251,7 +262,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 sp = current_env->sp;
                 break;
             }
-            //内存指令
+            /* 内存指令 */
             case i32_load: {
                 ip++;
                 uint32_t base = popU32();
@@ -305,13 +316,20 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 current_env->global_vars[index] = popU32();
                 break;
             }
-            //算术指令
+            /* 比较指令 */
+            case i32_its:
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(b < a ? 1 : 0);
+                break;
             case i32_eqz: {
                 ip++;
                 uint32_t a = popU32();
                 pushU32(a == 0 ? 1 : 0);
                 break;
             }
+            /* 算术指令 */
             case i32_add: {
                 ip++;
                 uint32_t a = popU32();
@@ -616,7 +634,7 @@ uint8_t *enter_block(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
 
     //执行frame中函数
     //sp要下移，栈顶元素即为函数参数
-    // exec_instructions(current_env, module);
+    exec_instructions(current_env, module);
 
     //执行完毕退栈
     current_env->control_stack->current_frame_index--;
@@ -626,7 +644,7 @@ uint8_t *enter_block(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
 
     //这里释放了frame，但是frame里面的DEEPFunction（作为参数传进来的）还没有释放，
     //需要caller处理
-    deep_free(frame);
-    
+    free(frame);
+
     return block->code_begin + block->code_size;
 }
