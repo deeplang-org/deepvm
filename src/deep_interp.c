@@ -187,9 +187,8 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_
 void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
     uint32_t *sp = current_env->cur_frame->sp;
     uint8_t *ip = current_env->cur_frame->function->code_begin;
-    uint8_t *ip_end = ip + current_env->cur_frame->function->code_size - 1;
+    uint8_t *ip_end = ip + current_env->cur_frame->function->code_size;
     uint32_t *memory = current_env->memory;
-
     while (ip < ip_end) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
@@ -221,6 +220,16 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 uint8_t *start;
                 uint32_t offset;
                 read_block(ip, &start, &offset, false);
+                //为block创建DEEPFunction结构体
+                DEEPFunction *block = deep_malloc(sizeof(DEEPFunction));
+                //block的局部变量和当前function的一致
+                block->local_vars = current_env->cur_frame->function->local_vars;
+                block->local_vars_count = current_env->cur_frame->function->local_vars_count;
+                block->code_begin = start;
+                block->code_size = offset;
+                block->func_type = type;
+                //执行block
+                ip = enter_block(current_env, module, block);
                 break;
             }
             case op_br_if: {
@@ -497,9 +506,6 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
         current_env->local_vars[(vars_temp--) - 1] = temp;
     }
 
-    //局部变量组
-    LocalVars **locals = func->local_vars;
-
     //为func函数创建帧
     DEEPInterpFrame *frame = (DEEPInterpFrame *) deep_malloc(sizeof(DEEPInterpFrame));
     if (frame == NULL) {
@@ -579,4 +585,44 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
 
     //返回栈顶元素
     return *(current_env->sp - 1);
+}
+
+//进入一个block, 需要提供这个block对应的DEEPFunction（我们把block也当作函数包装进去）
+//返回执行结束时的指令地址
+uint8_t *enter_block(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction *block) {
+    //不需要更新局部变量，因为目前进入block之后，局部变量和function是一样的
+
+    //为func函数创建帧
+    DEEPInterpFrame *frame = (DEEPInterpFrame *) deep_malloc(sizeof(DEEPInterpFrame));
+    if (frame == NULL) {
+        deep_error("Malloc area for normal_frame error!");
+    }
+    //初始化
+    frame->sp = current_env->sp;
+    frame->function = block;
+    frame->prev_func_frame = current_env->cur_frame->prev_func_frame;
+    frame->type = BLOCK_FRAME;
+
+    //更新env中内容
+    current_env->cur_frame = frame;
+
+    //更新控制栈
+    current_env->control_stack->current_frame_index++;
+    current_env->control_stack->frames[
+        current_env->control_stack->current_frame_index] = frame;
+
+    //执行frame中函数
+    //sp要下移，栈顶元素即为函数参数
+    // exec_instructions(current_env, module);
+
+    //执行完毕退栈
+    current_env->control_stack->current_frame_index--;
+    current_env->cur_frame = current_env->control_stack->frames[
+        current_env->control_stack->current_frame_index];
+    //不释放局部变量，因为这些变量原来的函数还要用
+
+    //这里释放了frame，但是frame里面的DEEPFunction（作为参数传进来的）还没有释放，
+    //需要caller处理
+    deep_free(frame);
+    return block->code_begin + block->code_size;
 }

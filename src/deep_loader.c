@@ -133,7 +133,7 @@ static void decode_type_section(const uint8_t* p, DEEPModule* module) {
 static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8_t* p_code) {
 	uint32_t func_count = read_leb_u32((uint8_t**)&p);
 	uint32_t code_func_count = read_leb_u32((uint8_t**)&p_code);
-	uint32_t type_index, code_size, local_set_count;
+	uint32_t type_index, code_size, local_set_count, p_head;
 	uint8_t local_vars_count = 0;
 	DEEPFunction *func;
 	LocalVars *local_set;
@@ -148,7 +148,6 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
 			code_size = read_leb_u32((uint8_t **)&p_code);
 			p_code_temp = p_code;
 			func->func_type = module->type_section[type_index];
-			func->code_size = code_size;
 			local_set_count = read_leb_u32((uint8_t**)&p_code);
 			if (local_set_count == 0) {
 				func->local_vars = NULL;
@@ -163,6 +162,7 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
 			}
 			func->code_begin = (uint8_t*)p_code;
 			func->local_vars_count = local_vars_count;
+			func->code_size = code_size - (uint32_t)(p_code - p_code_temp);
 			p_code = p_code_temp + code_size;
 		}
 	}

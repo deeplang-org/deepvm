@@ -15,3 +15,4 @@
 2. 额外添加了drop和select指令代码，也就是参数指令。暂时还没有实现。
 3. 准备实现一些目前没有的比较指令，因为在test中存在。
 4. 目前`read_block`函数已经可以正确算出block开始和截止的位置。
+5. 解决了`exec_instruction`函数中`ip_end`比function的实际结尾（end指令）要大的bug。在`DEEPFunction`中存储function的body的大小，而不是整个函数的大小。这样`ip_end = ip + code_size`可以正确指向函数的结尾。

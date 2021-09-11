@@ -71,4 +71,8 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module);
 
 void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index);
 
+//进入一个block, 需要提供这个block对应的DEEPFunction（我们把block也当作函数包装进去）
+//返回执行结束时的指令地址
+uint8_t *enter_block(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction *block);
+
 #endif /* _DEEP_INTERP_H */
