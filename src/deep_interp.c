@@ -85,18 +85,99 @@ void control_stack_free(DEEPControlStack *stack) {
 //暂时只支持block
 void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_else) {
     *start = ip;
-    while (true) {
+    bool finish = false;
+    uint8_t net_bracket = 1;
+    while (!finish) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
-        uint32_t opcode = (uint32_t) *ip;
+        uint32_t opcode = (uint32_t)*ip;
         switch (opcode)
         {
         case op_end:
             ip++;
-            *offset = (uint32_t)ip - *(uint32_t *)start;
+            net_bracket--;
+            if (net_bracket == 0) {
+                *offset = (uint32_t)ip - *(uint32_t *)start;
+                finish = true;
+            }
+            break;
+        //面对其他指令，只要正常阅读，不需要解释；这个函数只找end或else
+        //不过现在甚至不考虑else；只在做block的情况
+        //无立即数指令：
+        case op_nop:
+        case op_unreachable:
+        case i32_add:
+        case i32_and:
+        case i32_clz:
+        case i32_ctz:
+        case i32_divs:
+        case i32_divu:
+        case i32_eq:
+        case i32_eqz:
+        case i32_ges:
+        case i32_geu:
+        case i32_gts:
+        case i32_gtu:
+        case i32_its:
+        case i32_itu:
+        case i32_les:
+        case i32_leu:
+        case i32_mul:
+        case i32_ne:
+        case i32_or:
+        case i32_popcnt: // 这个不确定是不是需要立即数，不知道是什么
+        case i32_rems:
+        case i32_rotl:
+        case i32_rotr:
+        case i32_shl:
+        case i32_shrs:
+        case i32_shru:
+        case i32_sub:
+        case i32_trunc_f32_s:
+        case i32_trunc_f32_u:
+        case i32_xor:
+        case f32_abs:
+        case f32_add:
+        case f32_ceil:
+        case f32_convert_i32_s:
+        case f32_convert_i32_u:
+        case f32_copysign:
+        case f32_div:
+        case f32_floor:
+        case f32_max:
+        case f32_min:
+        case f32_mul:
+        case f32_nearest:
+        case f32_neg:
+        case f32_sqrt:
+        case f32_sub:
+        case f32_trunc:
+        case op_drop:
+        case op_select:
+            ip++;
+            break;
+        //需要一个leb立即数的指令：
+        case op_call:
+        case op_local_get:
+        case op_local_set:
+        case op_local_tee:
+        case op_global_get:
+        case op_global_set:
+        case f32_const:
+        case i32_const:
+        case op_br:
+        case op_br_if:
+            ip++;
+            read_leb_u32(&ip);
+            break;
+        //需要特殊考虑的指令：
+        case op_block:
+            ip++;
+            READ_BYTE(ip);
+            net_bracket++;
             break;
         default:
-           deep_error("Unknown opcode %x!", opcode);
+            deep_error("Unknown opcode %x!", opcode);
             exit(1);
         }
     }
@@ -113,7 +194,6 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
-        // printf("%x\n", opcode);
         switch (opcode) {
             case op_unreachable: {
                 deep_error("Runtime Error: Unreachable!");
@@ -125,8 +205,22 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 break;
             }
             case op_block: {
-                //暂时不支持WASM限制放开之后提供的多返回值和传参数机制
                 ip++;
+                //暂时不支持WASM限制放开之后提供的多返s回值和传参数机制
+                uint8_t return_type = READ_BYTE(ip);
+                DEEPType *type = deep_malloc(sizeof(DEEPType));
+                //block无参数
+                type->param_count = 0;
+                type->ret_count = return_type == op_type_void ? 0 : 1;
+                //设置返回值的类型（如果有）
+                if (type->ret_count == 1) {
+                    type->type = deep_malloc(1);
+                    type->type[0] = return_type;
+                }
+                //读取block主体
+                uint8_t *start;
+                uint32_t offset;
+                read_block(ip, &start, &offset, false);
                 break;
             }
             case op_br_if: {
@@ -199,9 +293,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 current_env->global_vars[index] = popU32();
                 break;
             }
-
-
-                //算术指令
+            //算术指令
             case i32_eqz: {
                 ip++;
                 uint32_t a = popU32();
