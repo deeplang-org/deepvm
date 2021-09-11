@@ -5,6 +5,7 @@
 #ifndef _DEEP_INTERP_H
 #define _DEEP_INTERP_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "deep_loader.h"
 
@@ -62,6 +63,9 @@ void stack_free(DEEPStack *stack);
 
 //销毁控制栈
 void control_stack_free(DEEPControlStack *stack);
+
+//读结构体
+void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_else);
 
 int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module);
 

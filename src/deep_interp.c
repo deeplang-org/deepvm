@@ -77,8 +77,28 @@ DEEPControlStack *control_stack_cons(void) {
 //销毁控制栈
 void control_stack_free(DEEPControlStack *stack) {
     assert(stack->current_frame_index == 0);
-    free(stack->frames);
-    free(stack);
+    deep_free(stack);
+}
+
+//读结构体的范围
+//暂时只支持block
+void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_else) {
+    *start = ip;
+    while (true) {
+        //提取指令码
+        //立即数存在的话，提取指令码时提取立即数
+        uint32_t opcode = (uint32_t) *ip;
+        switch (opcode)
+        {
+        case op_end:
+            ip++;
+            *offset = (uint32_t)ip - *(uint32_t *)start;
+            break;
+        default:
+           deep_error("Unknown opcode %x!", opcode);
+            exit(1);
+        }
+    }
 }
 
 //执行代码块指令
@@ -104,6 +124,8 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 break;
             }
             case op_block: {
+                //暂时不支持WASM限制放开之后提供的多返回值和传参数机制
+                ip++;
                 break;
             }
             case op_br_if: {
@@ -129,7 +151,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 uint32_t align = read_leb_u32(&ip);
                 ip++;
                 uint32_t offset = read_leb_u32(&ip);
-                uint32_t number = read_mem32(memory+base, offset);
+                uint32_t number = read_mem32(memory + base, offset);
                 pushU32(number);
                 break;
             }
@@ -140,7 +162,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 uint32_t offset = read_leb_u32(&ip);
                 uint32_t number = popU32();
-                write_mem32(memory+base, number,offset);
+                write_mem32(memory + base, number, offset);
                 break;
             }
             case op_local_get: {

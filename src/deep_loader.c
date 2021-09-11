@@ -113,8 +113,9 @@ static void decode_type_section(const uint8_t* p, DEEPModule* module) {
 			p          = p_tmp;
 			total_size = 8 + param_count + ret_count;
 
-			module->type_section[i]             = (DEEPType*)deep_malloc(total_size);
-			module->type_section[i]->param_count  = param_count;
+			module->type_section[i] = (DEEPType*)deep_malloc(sizeof(DEEPType));
+			module->type_section[i]->type = (DEEPType*)deep_malloc(total_size);
+			module->type_section[i]->param_count = param_count;
 			module->type_section[i]->ret_count = ret_count;
 
 			for (uint32_t j = 0; j < param_count; j++) {
@@ -297,6 +298,7 @@ void module_free(DEEPModule *module) {
 	}
 	deep_free(module->data_section);
 	for (i = 0; i < module->type_count; i++) {
+		deep_free(module->type_section[i]->type);
 		deep_free(module->type_section[i]);
 	}
 	deep_free(module->type_section);

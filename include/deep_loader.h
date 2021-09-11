@@ -34,7 +34,7 @@ typedef struct DEEPType
 {
     uint32_t param_count;
     uint32_t ret_count;
-    uint8_t type[1];
+    uint8_t *type;
 } DEEPType;
 
 //local variables item
