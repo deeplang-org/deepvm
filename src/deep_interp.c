@@ -230,6 +230,9 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 block->func_type = type;
                 //执行block
                 ip = enter_block(current_env, module, block);
+                //释放空间
+                deep_free(type);
+                deep_free(block);
                 break;
             }
             case op_br_if: {
@@ -624,5 +627,6 @@ uint8_t *enter_block(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
     //这里释放了frame，但是frame里面的DEEPFunction（作为参数传进来的）还没有释放，
     //需要caller处理
     deep_free(frame);
+    
     return block->code_begin + block->code_size;
 }

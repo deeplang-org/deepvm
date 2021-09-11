@@ -303,6 +303,14 @@ void module_free(DEEPModule *module) {
 	}
 	deep_free(module->type_section);
 	for (i = 0; i < module->function_count; i++) {
+		uint32_t var_count = 0;
+		uint32_t j = 0;
+		while (var_count < module->func_section[i]->local_vars_count) {
+			var_count += 
+				module->func_section[i]->local_vars[j]->count;
+			deep_free(module->func_section[i]->local_vars[j]);
+			j++;
+		}
 		deep_free(module->func_section[i]->local_vars);
 		deep_free(module->func_section[i]);
 	}
