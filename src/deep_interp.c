@@ -231,7 +231,9 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 block->code_size = offset;
                 block->func_type = type;
                 //执行block
+                current_env->sp = sp;
                 ip = enter_block(current_env, module, block);
+                sp = current_env->sp;
                 //释放空间
                 deep_free(type);
                 deep_free(block);
@@ -240,12 +242,13 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             case op_br: {
                 ip++;
                 uint32_t operand = read_leb_u32(&ip);
+                br = true;
                 break;
             }
             case op_br_if: {
                 ip++;
                 uint32_t operand = read_leb_u32(&ip);
-                br = true;
+                br = popU32();
                 break;
             }
             case op_end: {
@@ -298,8 +301,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             case op_local_tee: {
                 ip++;
                 uint32_t index = read_leb_u32(&ip);//local_tee指令的立即数
-                uint32_t num = *(sp - 1);
-                current_env->local_vars[index] = num;
+                current_env->local_vars[index] = *(sp - 1);
                 break;
             }
             case op_global_get: {
@@ -316,16 +318,33 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 break;
             }
             /* 比较指令 */
-            case i32_its:
+            case i32_its: {
                 ip++;
-                uint32_t a = popU32();
-                uint32_t b = popU32();
+                int32_t a = popS32();
+                int32_t b = popS32();
                 pushU32(b < a ? 1 : 0);
                 break;
+            }
             case i32_eqz: {
                 ip++;
                 uint32_t a = popU32();
                 pushU32(a == 0 ? 1 : 0);
+                break;
+            }
+            case i32_gts: {
+                ip++;
+                int32_t a = popS32();
+                int32_t b = popS32();
+                pushU32(b > a ? 1 : 0);
+                break;
+            }
+            /* 参数指令 */
+            case op_select: {
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                uint32_t c = popU32();
+                pushU32(a ? c : b);
                 break;
             }
             /* 算术指令 */
