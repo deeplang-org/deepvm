@@ -37,18 +37,18 @@ typedef struct DEEPType
     uint8_t *type;
 } DEEPType;
 
-//local variables item
-typedef struct LocalVars
+// Storage of local variable information in DEEPFunction
+typedef struct LocalVarCluster
 {
     uint32_t count;
     uint8_t local_type;
-} LocalVars;
+} LocalVarCluster;
 
 //function item
 typedef struct DEEPFunction
 {
     DEEPType *func_type; // the type of function
-    LocalVars **local_vars;
+    LocalVarCluster *local_var_types; // Local variables' type informations
     uint32_t code_size;
     uint8_t *code_begin;
     uint8_t local_vars_count;
