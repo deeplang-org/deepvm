@@ -24,6 +24,7 @@ typedef struct DEEPInterpFrame {
     struct DEEPFunction *function; //当前函数实例
     uint32_t *sp; //操作数栈指针
     DEEPFrameType type; //类型
+    uint32_t *local_vars; //局部变量
 } DEEPInterpFrame;
 
 //操作数栈

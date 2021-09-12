@@ -134,9 +134,8 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
 	uint32_t func_count = read_leb_u32((uint8_t**)&p);
 	uint32_t code_func_count = read_leb_u32((uint8_t**)&p_code);
 	uint32_t type_index, code_size, local_set_count, p_head;
-	uint8_t local_vars_count = 0;
+	uint8_t local_vars_count;
 	DEEPFunction *func;
-	LocalVars *local_set;
 	const uint8_t *p_code_temp;
 	if (func_count == code_func_count) {
 		module->function_count = func_count;
@@ -148,16 +147,23 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
 			code_size = read_leb_u32((uint8_t **)&p_code);
 			p_code_temp = p_code;
 			func->func_type = module->type_section[type_index];
-			local_set_count = read_leb_u32((uint8_t**)&p_code);
+			// The local variables also include the parameters
+			local_vars_count = func->func_type->param_count;
+			local_set_count = func->func_type->param_count + read_leb_u32((uint8_t**)&p_code);
 			if (local_set_count == 0) {
-				func->local_vars = NULL;
+				func->local_var_types = NULL;
 			} else {
-				func->local_vars = (LocalVars **)deep_malloc(local_set_count * sizeof(LocalVars *));
-				for (uint32_t j = 0; j < local_set_count; j++) {
-					local_set = func->local_vars[j] = (LocalVars *)deep_malloc(sizeof(LocalVars));
-					local_set->count = read_leb_u32((uint8_t **)&p_code);
-					local_vars_count += local_set->count;
-					local_set->local_type = READ_BYTE(p_code);
+				func->local_var_types = (LocalVarCluster *)deep_malloc(local_set_count * sizeof(LocalVarCluster));
+				// For parameters, the count is 1, and the type 
+				// is the type of the corresponding parameter
+				for (uint32_t j = 0; j < func->func_type->param_count; j++) {
+					func->local_var_types[j].count = 1;
+					func->local_var_types[j].local_type = func->func_type->type[j];
+				}
+				for (uint32_t j = func->func_type->param_count; j < local_set_count; j++) {
+					func->local_var_types[j].count = read_leb_u32((uint8_t **)&p_code);
+					local_vars_count += func->local_var_types[j].count;
+					func->local_var_types[j].local_type = READ_BYTE(p_code);
 				}
 			}
 			func->code_begin = (uint8_t*)p_code;
@@ -303,15 +309,7 @@ void module_free(DEEPModule *module) {
 	}
 	deep_free(module->type_section);
 	for (i = 0; i < module->function_count; i++) {
-		uint32_t var_count = 0;
-		uint32_t j = 0;
-		while (var_count < module->func_section[i]->local_vars_count) {
-			var_count += 
-				module->func_section[i]->local_vars[j]->count;
-			deep_free(module->func_section[i]->local_vars[j]);
-			j++;
-		}
-		deep_free(module->func_section[i]->local_vars);
+		deep_free(module->func_section[i]->local_var_types);
 		deep_free(module->func_section[i]);
 	}
 	deep_free(module->func_section);
