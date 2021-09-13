@@ -17,6 +17,6 @@
 4. 目前`read_block`函数已经可以正确算出block开始和截止的位置。其他结构体暂未实现。
 5. 解决了`exec_instruction`函数中`ip_end`比function的实际结尾（end指令）要大的bug。在`DEEPFunction`中存储function的body的大小，而不是整个函数的大小。这样`ip_end = ip + code_size`可以正确指向函数的结尾。
 6. 目前可以识别和执行block指令，并且正确的操作控制栈（创建正确的block帧，推入/推出栈，释放帧，没有内存泄漏），同时会返回执行完成后的指令地址。
-7. 实现**只能跳出最近一层**的br和br_if指令（无论立即数，只跳一层）。
+7. 实现的br和br_if指令。跳出多层也已实现，但是没有测试。
 8. tri_if_001.wasm和tri_if_002.wasm通过。
 9. 下一步：实现loop。

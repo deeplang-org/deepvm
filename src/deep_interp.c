@@ -189,8 +189,12 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
     uint8_t *ip = current_env->cur_frame->function->code_begin;
     uint8_t *ip_end = ip + current_env->cur_frame->function->code_size;
     uint32_t *memory = current_env->memory;
-    bool br = false;
-    while (ip < ip_end && !br) {
+    while (ip < ip_end) {
+        //判断是否需要跳出
+        if (current_env->jump_depth) {
+            current_env->jump_depth--;
+            break;
+        }
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
@@ -241,14 +245,12 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             }
             case op_br: {
                 ip++;
-                uint32_t operand = read_leb_u32(&ip);
-                br = true;
+                current_env->jump_depth = read_leb_u32(&ip) + 1;
                 break;
             }
             case op_br_if: {
                 ip++;
-                uint32_t operand = read_leb_u32(&ip);
-                br = popU32();
+                current_env->jump_depth = popU32() ? (read_leb_u32(&ip) + 1) : (read_leb_u32(&ip), 0);
                 break;
             }
             case op_end: {

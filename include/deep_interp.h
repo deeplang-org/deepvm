@@ -50,6 +50,7 @@ typedef struct DEEPExecEnv {
     uint32_t *global_vars; //全局变量
     uint8_t *memory; //内存
     DEEPControlStack *control_stack; //控制栈
+    int jump_depth; //为0时表示不需要跳出函数/结构体；为x表示要跳出x层
 } DEEPExecEnv;
 
 
