@@ -104,6 +104,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_
         //面对其他指令，只要正常阅读，不需要解释；这个函数只找end或else
         //不过现在甚至不考虑else；只在做block的情况
         //无立即数指令：
+        case op_return:
         case op_nop:
         case op_unreachable:
         case i32_add:
@@ -236,7 +237,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 block->func_type = type;
                 //执行block
                 current_env->sp = sp;
-                ip = enter_block(current_env, module, block);
+                ip = enter_frame(current_env, module, block, BLOCK_FRAME);
                 sp = current_env->sp;
                 //释放空间
                 deep_free(type);
@@ -251,6 +252,13 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             case op_br_if: {
                 ip++;
                 current_env->jump_depth = popU32() ? (read_leb_u32(&ip) + 1) : (read_leb_u32(&ip), 0);
+                break;
+            }
+            case op_return: {
+                //将jump_depth设为负数，代表正在执行return指令
+                //等跳出最近的函数时，会将其重新设为0
+                current_env->jump_depth = -1;
+                ip++;
                 break;
             }
             case op_end: {
@@ -569,6 +577,12 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     
     exec_instructions(current_env, module);
 
+    //如果遇到了return指令，则跳出到这一步就可以了
+    //当jump_depth为负数时，表示正在执行return指令
+    if (current_env->jump_depth < 0) {
+        current_env->jump_depth = 0;
+    }
+
     //执行完毕退栈
     current_env->cur_frame = frame->prev_func_frame;
     current_env->control_stack->current_frame_index--;
@@ -629,9 +643,9 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     return *(current_env->sp - 1);
 }
 
-//进入一个block, 需要提供这个block对应的DEEPFunction（我们把block也当作函数包装进去）
+//进入一个block/loop, 需要提供这个block对应的DEEPFunction（我们把block也当作函数包装进去）
 //返回执行结束时的指令地址
-uint8_t *enter_block(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction *block) {
+uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction *block, DEEPFrameType frame_type) {
     //为func函数创建帧
     DEEPInterpFrame *frame = (DEEPInterpFrame *) deep_malloc(sizeof(DEEPInterpFrame));
     if (frame == NULL) {
@@ -643,7 +657,7 @@ uint8_t *enter_block(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
     frame->prev_func_frame = current_env->cur_frame->prev_func_frame;
     //不需要更新局部变量，因为目前进入block之后，局部变量和function是一样的
     frame->local_vars = current_env->local_vars;
-    frame->type = BLOCK_FRAME;
+    frame->type = frame_type;
 
     //更新env中内容
     current_env->cur_frame = frame;
@@ -667,5 +681,7 @@ uint8_t *enter_block(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
     //需要caller处理
     free(frame);
 
-    return block->code_begin + block->code_size;
+    return frame_type == LOOP_FRAME ? 
+        block->code_begin : 
+        block->code_begin + block->code_size;
 }

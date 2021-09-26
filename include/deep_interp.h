@@ -50,7 +50,8 @@ typedef struct DEEPExecEnv {
     uint32_t *global_vars; //全局变量
     uint8_t *memory; //内存
     DEEPControlStack *control_stack; //控制栈
-    int jump_depth; //为0时表示不需要跳出函数/结构体；为x表示要跳出x层
+    int jump_depth; //为0时表示不需要跳出函数或结构体；为x表示要跳出x层；
+    // 为负数表示正在执行return指令
 } DEEPExecEnv;
 
 
@@ -75,6 +76,6 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
 
 //进入一个block, 需要提供这个block对应的DEEPFunction（我们把block也当作函数包装进去）
 //返回执行结束时的指令地址
-uint8_t *enter_block(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction *block);
+uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction *block, DEEPFrameType frame_type);
 
 #endif /* _DEEP_INTERP_H */
