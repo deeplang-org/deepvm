@@ -78,7 +78,11 @@ static section_listnode* create_section_list(const uint8_t** p, int32_t size) {
 	const uint8_t *buf = *p, *buf_end = buf + size;
 	section_listnode* section_list = NULL;
 	section_listnode* current_section = NULL;
+	printf("Buf: %p\n", buf);
+	printf("Buf-End: %p\n", buf_end);
 	while (buf < buf_end) {
+		printf("In while buf: %p\n", buf);
+		printf("In while buf value: %x\n", *(uint8_t *)buf);
 		section_listnode* section = (section_listnode*)deep_malloc(sizeof(section_listnode));
 		if (section_list == NULL) {
 			section_list = section;
@@ -86,11 +90,13 @@ static section_listnode* create_section_list(const uint8_t** p, int32_t size) {
 		}
 		section->section_type  = READ_BYTE(buf);
 		section->section_size  = read_leb_u32((uint8_t**)&buf);
+		printf("This time size: %u\n", section->section_size);
 		section->section_begin = (uint8_t*)buf;
 		buf += section->section_size;
 		current_section->next = section;
 		current_section       = section;
 	}
+	printf("Out of while buf: %p\n", buf);
 	if (buf == buf_end)
 		return section_list;
 	return NULL;
