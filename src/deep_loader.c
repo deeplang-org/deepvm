@@ -19,12 +19,15 @@
 #define READ_UINT32(p)  READ_VALUE(uint32_t, p)
 #define READ_BYTE(p) READ_VALUE(uint8_t, p)
 
+#define WASM_MAGIC_SIZE 4
+#define WASM_VERSION_SIZE 4
+
 //解码一个无符号32位或64整型，目前只会用到32位类型,在大多数实现中占5个字节
 uint32_t read_leb_u32(uint8_t** p) {
 	uint8_t* buf = *p;
 	uint32_t   res = 0;
 	for (int32_t i = 0; i < 10; i++) {
-		res |= (buf[i] & 0x7f) << (i * 7); 
+		res |= (buf[i] & 0x7f) << (i * 7);
 		if ((buf[i] & 0x80) == 0) {
 			*p += i + 1;
 			return res;
@@ -37,7 +40,7 @@ int32_t read_leb_i32(uint8_t** p) {
 	uint8_t* buf = *p;
 	int32_t res = 0;
 	for (int32_t i = 0; i < 10; i++) {
-		res |= (buf[i] & 0x7f) << (i * 7); 
+		res |= (buf[i] & 0x7f) << (i * 7);
 		if ((buf[i] & 0x80) == 0) {
 			*p += i + 1;
 			if((buf[i] & 0x40) != 0) {
@@ -154,7 +157,7 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
 				func->local_var_types = NULL;
 			} else {
 				func->local_var_types = (LocalVarCluster *)deep_malloc(local_set_count * sizeof(LocalVarCluster));
-				// For parameters, the count is 1, and the type 
+				// For parameters, the count is 1, and the type
 				// is the type of the corresponding parameter
 				for (uint32_t j = 0; j < func->func_type->param_count; j++) {
 					func->local_var_types[j].count = 1;
@@ -198,7 +201,7 @@ static void decode_data_section(const uint8_t* p, DEEPModule* module) {
 	DEEPData* Data;
 	module->data_count = data_count;
 	module->data_section = (DEEPData**)deep_malloc(data_count * sizeof(DEEPData*));
-	
+
 	for (uint32_t i = 0; i < data_count; i ++) {
 		Data = module->data_section[i] = (DEEPData*)deep_malloc(sizeof(DEEPData));
 		READ_BYTE(p);
@@ -275,7 +278,7 @@ DEEPModule* deep_load(uint8_t** p, int size) {
 		deep_error("magic number error");
 		return NULL;
 	}
-	section_listnode* section_list = create_section_list((const uint8_t**)p, size);
+	section_listnode* section_list = create_section_list((const uint8_t**)p, size - WASM_MAGIC_SIZE - WASM_VERSION_SIZE);
 	if(section_list == NULL) {
 		deep_error("create section list fail");
 		return NULL;
