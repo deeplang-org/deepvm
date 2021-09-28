@@ -4,7 +4,14 @@
 #ifndef _DEEP_OPCODE_H
 #define _DEEP_OPCODE_H
 enum DEEPOpcode {
-    /* control */
+    /* 类型 */
+    op_type_void = 0x40,
+    op_type_i32 = 0x7F,
+    op_type_f32 = 0x7D,
+    /* 参数指令 */
+    op_drop = 0x1A,
+    op_select = 0x1B,
+    /* 控制指令 */
     op_unreachable = 0x00,
     op_nop = 0x01,
     op_block = 0x02,
