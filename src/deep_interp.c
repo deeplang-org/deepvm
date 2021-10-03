@@ -679,7 +679,7 @@ uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
 
     //这里释放了frame，但是frame里面的DEEPFunction（作为参数传进来的）还没有释放，
     //需要caller处理
-    free(frame);
+    deep_free(frame);
 
     return frame_type == LOOP_FRAME ? 
         block->code_begin : 
