@@ -528,7 +528,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
         }
         //检查操作数栈是否溢出
         if (sp > current_env->sp_end) {
-            printf("warning! Operand stack overflow!\r\n");
+            deep_error("Error: Operand stack overflow!\r\n");
             return;
         }
     }
