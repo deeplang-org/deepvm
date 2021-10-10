@@ -119,8 +119,8 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_
         case i32_geu:
         case i32_gts:
         case i32_gtu:
-        case i32_its:
-        case i32_itu:
+        case i32_lts:
+        case i32_ltu:
         case i32_les:
         case i32_leu:
         case i32_mul:
@@ -177,6 +177,10 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_
             READ_BYTE(ip);
             net_bracket++;
             break;
+        case op_br_table:
+            ip++;
+            ip += read_leb_u32(&ip) + 1;
+            break;
         default:
             deep_error("Unknown opcode %x!", opcode);
             exit(1);
@@ -229,6 +233,10 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 read_block(ip, &start, &offset, false);
                 //为block创建DEEPFunction结构体
                 DEEPFunction *block = deep_malloc(sizeof(DEEPFunction));
+                if (block == NULL) {
+                    deep_error("Heap overflow at opcode %x!", opcode);
+                    exit(1);
+                }
                 //block的局部变量和当前function的一致
                 block->local_var_types = current_env->cur_frame->function->local_var_types;
                 block->local_vars_count = current_env->cur_frame->function->local_vars_count;
@@ -252,6 +260,19 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             case op_br_if: {
                 ip++;
                 current_env->jump_depth = popU32() ? (read_leb_u32(&ip) + 1) : (read_leb_u32(&ip), 0);
+                break;
+            }
+            case op_br_table: {
+                ip++;
+                uint8_t jump_table_size = 1 + (uint8_t)read_leb_u32(&ip);
+                ip += jump_table_size;
+                uint8_t jump_label = (uint8_t)popS32();
+                if (jump_label < jump_table_size - 1) {
+                    current_env->jump_depth
+                        = *(ip - jump_table_size + jump_label) + 1;
+                } else {
+                    current_env->jump_depth = *ip + 1;
+                }
                 break;
             }
             case op_return: {
@@ -328,11 +349,18 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 break;
             }
             /* 比较指令 */
-            case i32_its: {
+            case i32_lts: {
                 ip++;
                 int32_t a = popS32();
                 int32_t b = popS32();
                 pushU32(b < a ? 1 : 0);
+                break;
+            }
+            case i32_gtu: {
+                ip++;
+                int32_t a = popU32();
+                int32_t b = popU32();
+                pushU32(b > a ? 1 : 0);
                 break;
             }
             case i32_eqz: {

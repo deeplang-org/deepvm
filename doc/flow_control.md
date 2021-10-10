@@ -21,3 +21,4 @@
 8. tri_if_001.wasm和tri_if_002.wasm通过。
 9. loop指令已经实现，但是没有测试（测试样例中的loop_001不包含loop）。
 10. return指令已经实现并通过测试。
+11. switch (br_table指令)已经实现并通过测试。
