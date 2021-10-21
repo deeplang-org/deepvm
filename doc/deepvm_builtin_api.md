@@ -4,9 +4,9 @@
 
 Generally, builtin API is a function with the body is built  in language VM and user can call function through reading builtin API SPEC or language demos.
 
-Deeplang builtin APIs  are  designed for system io, IoT hardware interface, ffi and so on. 
+Deeplang builtin APIs  are  designed for system io, IoT hardware interface, **ffi** and so on. 
 
-IO api: 
+deeplang builtin functions: 
 
 ```
 fun puts(str: String);
@@ -80,9 +80,31 @@ deeplang codegen wasm file (s-expression).
   (i32.const 0)
  )
 )
+
+builtin 
+import map native function table
+
 ```
 
 ### What to do
 
-1. import section loading in DeepVM loader.
-2. mapping deeplang import function with c functions in DeepVM interp.
+1. import section loading in DeepVM loader. lichang
+2. mapping deeplang import function with c functions in DeepVM interp. chen yitang
+
+```c
+typedef struct {
+    const char *funcName;
+    const char *funcProto;
+    void *(func)(void);
+}
+
+const funcMap_t nativeFuncMapping[] = 
+[
+	{"puts","v(s)",native_puts},
+	{"puti", "v(i)", native_puti},
+	{"uartOpen","i(i,i)", native_uartOpen}
+]
+```
+
+
+
