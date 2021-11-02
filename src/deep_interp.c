@@ -13,6 +13,10 @@
 #include "deep_mem.h"
 #include "deep_opcode.h"
 
+// 因为暂时没有import section，所以用这个宏来表示是否允许打洞
+// 在import section实现之前，需要跑正常代码请注释下行
+#define DEBUG_NATIVE_FUNCTION
+
 #define popS32() (*(int32_t *)(--sp))
 #define popF32() (*(float *)(--sp))
 #define popU32() (*(uint32_t *)(--sp))
@@ -45,6 +49,7 @@ DEEPStack *stack_cons(void) {
     stack->sp = (uint32_t *) deep_malloc(sizeof(uint32_t) * STACK_CAPACITY);
     if (stack->sp == NULL) {
         deep_error("Malloc area for stack error!");
+        exit(1);
     }
     stack->sp_end = stack->sp + stack->capacity;
     return stack;
@@ -289,11 +294,23 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             case op_call: {
                 ip++;
                 uint32_t func_index = read_leb_u32(&ip);//被调用函数index
+                #ifdef DEBUG_NATIVE_FUNCTION
+                if (func_index < NATIVE_FUNCTION_COUNT) {
+                    call_system_function(current_env, module, func_index);
+                } else {
+                    //需要一个同步操作
+                    current_env->sp = sp;
+                    call_function(current_env, module, func_index - NATIVE_FUNCTION_COUNT);
+                    sp = current_env->sp;
+                }
+                break;
+                #else
                 //需要一个同步操作
                 current_env->sp = sp;
                 call_function(current_env, module, func_index);
                 sp = current_env->sp;
                 break;
+                #endif
             }
             /* 内存指令 */
             case i32_load: {
@@ -712,4 +729,22 @@ uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
     return frame_type == LOOP_FRAME ? 
         block->code_begin : 
         block->code_begin + block->code_size;
+}
+
+//调用系统函数
+void call_system_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index) {
+    uint32_t *sp = current_env->cur_frame->sp;
+    switch (func_index)
+    {
+    case NATIVE_PUTS:
+        // TODO
+        break;
+    case NATIVE_PUTI:
+        int32_t i = popS32();
+        printf("%d", i);
+        break;
+    default:
+        deep_error("Error: Unknown System Call!");
+        exit(1);
+    }
 }

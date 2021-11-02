@@ -41,6 +41,13 @@ typedef struct DEEPControlStack {
     uint32_t current_frame_index;
 } DEEPControlStack;
 
+//系统函数编码
+enum {
+    NATIVE_PUTS,
+    NATIVE_PUTI,
+    NATIVE_FUNCTION_COUNT //因为暂时没有import section，所以用这个数字来代替native函数的数量
+};
+
 typedef struct DEEPExecEnv {
 
     struct DEEPInterpFrame *cur_frame; //当前函数帧
@@ -77,5 +84,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
 //进入一个block, 需要提供这个block对应的DEEPFunction（我们把block也当作函数包装进去）
 //返回执行结束时的指令地址
 uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction *block, DEEPFrameType frame_type);
+
+void call_system_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index);
 
 #endif /* _DEEP_INTERP_H */
