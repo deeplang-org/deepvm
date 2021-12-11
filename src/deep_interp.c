@@ -97,7 +97,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_
             ip++;
             net_bracket--;
             if (net_bracket == 0) {
-                *offset = (uint32_t)ip - *(uint32_t *)start;
+                *offset = (uint32_t)(ip - *start);
                 finish = true;
             }
             break;
@@ -193,7 +193,7 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
     uint32_t *sp = current_env->cur_frame->sp;
     uint8_t *ip = current_env->cur_frame->function->code_begin;
     uint8_t *ip_end = ip + current_env->cur_frame->function->code_size;
-    uint32_t *memory = current_env->memory;
+    uint8_t *memory = current_env->memory;
     while (ip < ip_end) {
         //判断是否需要跳出
         if (current_env->jump_depth) {
@@ -578,6 +578,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     DEEPInterpFrame *frame = (DEEPInterpFrame *) deep_malloc(sizeof(DEEPInterpFrame));
     if (frame == NULL) {
         deep_error("Malloc area for normal_frame error!");
+        return;
     }
     //初始化
     frame->sp = current_env->sp;
@@ -598,11 +599,11 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     //更新控制栈
     current_env->control_stack->current_frame_index++;
     current_env->control_stack->frames[
-        current_env->control_stack->current_frame_index] = frame;
+    current_env->control_stack->current_frame_index] = frame;
 
     //执行frame中函数
     //sp要下移，栈顶元素即为函数参数
-    
+
     exec_instructions(current_env, module);
 
     //如果遇到了return指令，则跳出到这一步就可以了
@@ -618,7 +619,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     deep_free(current_env->local_vars);
     deep_free(frame);
     current_env->local_vars = current_env->control_stack->frames[
-        current_env->control_stack->current_frame_index]->local_vars;
+    current_env->control_stack->current_frame_index]->local_vars;
 }
 
 //为main函数创建帧，执行main函数
@@ -709,7 +710,7 @@ uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
     //需要caller处理
     deep_free(frame);
 
-    return frame_type == LOOP_FRAME ? 
-        block->code_begin : 
+    return frame_type == LOOP_FRAME ?
+        block->code_begin :
         block->code_begin + block->code_size;
 }

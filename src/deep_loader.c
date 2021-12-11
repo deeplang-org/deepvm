@@ -13,7 +13,10 @@
 #include "deep_log.h"
 #include "deep_mem.h"
 
-//read a value of specified type
+/**
+ * @brief read a value of specified type
+ *
+ */
 #define READ_VALUE(Type, p) \
     (p += sizeof(Type), *(Type*)(p - sizeof(Type)))
 #define READ_UINT32(p)  READ_VALUE(uint32_t, p)
@@ -22,7 +25,12 @@
 #define WASM_MAGIC_SIZE 4
 #define WASM_VERSION_SIZE 4
 
-//解码一个无符号32位或64整型，目前只会用到32位类型,在大多数实现中占5个字节
+/**
+ * @brief read unsigned int 32bits
+ *
+ * @param p
+ * @return uint32_t
+ */
 uint32_t read_leb_u32(uint8_t** p) {
     uint8_t* buf = *p;
     uint32_t   res = 0;
@@ -59,7 +67,13 @@ float read_ieee_32(uint8_t **p) {
     return res;
 }
 
-//检查魔数和版本号
+/**
+ * @brief check magic number and version of wasm module
+ *
+ * @param p
+ * @return true
+ * @return false
+ */
 static bool check_magic_number_and_version(uint8_t** p) {
     uint32_t magic_number = 0, version = 0;
     magic_number = READ_UINT32(*p);
@@ -76,7 +90,13 @@ static char* str_gen(const char* p, int32_t len) {
     return str;
 }
 
-//解析出每个section的开始和大小和类型，拉成一个链表， 从第二项开始存
+/**
+ * @brief Create a section list object with linklist
+ *
+ * @param p
+ * @param size
+ * @return section_listnode*
+ */
 static section_listnode* create_section_list(const uint8_t** p, int32_t size) {
     const uint8_t *buf = *p, *buf_end = buf + size;
     section_listnode* section_list = NULL;
@@ -99,14 +119,19 @@ static section_listnode* create_section_list(const uint8_t** p, int32_t size) {
     return NULL;
 }
 
-//读取类型段
+/**
+ * @brief read type section
+ *
+ * @param p
+ * @param module
+ */
 static void decode_type_section(const uint8_t* p, DEEPModule* module) {
 
     const uint8_t* p_tmp;
     uint32_t         total_size = 0;
     uint32_t         type_count = 0, param_count = 0, ret_count = 0;
     module->type_count = type_count = read_leb_u32((uint8_t**)&p);
-    module->type_section            = (DEEPType**)deep_malloc(type_count * sizeof(DEEPType*));
+    module->type_section = (DEEPType**)deep_malloc(type_count * sizeof(DEEPType*));
     for (int32_t i = 0; i < type_count; i++) {
         if (READ_BYTE(p) == 0x60) {
             param_count = read_leb_u32((uint8_t**)&p);
@@ -117,7 +142,7 @@ static void decode_type_section(const uint8_t* p, DEEPModule* module) {
             total_size = 8 + param_count + ret_count;
 
             module->type_section[i] = (DEEPType*)deep_malloc(sizeof(DEEPType));
-            module->type_section[i]->type = (DEEPType*)deep_malloc(total_size);
+            module->type_section[i]->type = (uint8_t*)deep_malloc(total_size);
             module->type_section[i]->param_count = param_count;
             module->type_section[i]->ret_count = ret_count;
 
@@ -132,7 +157,13 @@ static void decode_type_section(const uint8_t* p, DEEPModule* module) {
     }
 }
 
-//读取函数段
+/**
+ * @brief read funciton section
+ *
+ * @param p
+ * @param module
+ * @param p_code
+ */
 static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8_t* p_code) {
     uint32_t func_count = read_leb_u32((uint8_t**)&p);
     uint32_t code_func_count = read_leb_u32((uint8_t**)&p_code);
@@ -140,44 +171,72 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
     uint8_t local_vars_count;
     DEEPFunction *func;
     const uint8_t *p_code_temp;
-    if (func_count == code_func_count) {
-        module->function_count = func_count;
-        module->func_section = (DEEPFunction**)deep_malloc(func_count * sizeof(DEEPFunction*));
-
-        for (uint32_t i = 0; i < func_count; i++) {
-            func = module->func_section[i] = (DEEPFunction*)deep_malloc(sizeof(DEEPFunction));
-            type_index = read_leb_u32((uint8_t **)&p);
-            code_size = read_leb_u32((uint8_t **)&p_code);
-            p_code_temp = p_code;
-            func->func_type = module->type_section[type_index];
-            // The local variables also include the parameters
-            local_vars_count = func->func_type->param_count;
-            local_set_count = func->func_type->param_count + read_leb_u32((uint8_t**)&p_code);
-            if (local_set_count == 0) {
-                func->local_var_types = NULL;
-            } else {
-                func->local_var_types = (LocalVarCluster *)deep_malloc(local_set_count * sizeof(LocalVarCluster));
-                // For parameters, the count is 1, and the type
-                // is the type of the corresponding parameter
-                for (uint32_t j = 0; j < func->func_type->param_count; j++) {
-                    func->local_var_types[j].count = 1;
-                    func->local_var_types[j].local_type = func->func_type->type[j];
-                }
-                for (uint32_t j = func->func_type->param_count; j < local_set_count; j++) {
-                    func->local_var_types[j].count = read_leb_u32((uint8_t **)&p_code);
-                    local_vars_count += func->local_var_types[j].count;
-                    func->local_var_types[j].local_type = READ_BYTE(p_code);
-                }
-            }
-            func->code_begin = (uint8_t*)p_code;
-            func->local_vars_count = local_vars_count;
-            func->code_size = code_size - (uint32_t)(p_code - p_code_temp);
-            p_code = p_code_temp + code_size;
+    if (func_count != code_func_count) {
+        deep_error("function count is not equal to function body count");
+        return;
+    }
+    uint32_t import_func_count = module->import_function_count;
+    uint32_t all_func_count = import_func_count + func_count;
+    module->function_count = all_func_count;
+    module->func_section = (DEEPFunction**)deep_malloc(all_func_count * sizeof(DEEPFunction*));
+    /* functions from import section */
+    int32_t import_func_index = 0;
+    DEEPImport *import = NULL;
+    for(int32_t i = 0; i < module->import_count; i++) {
+        if (import_func_index >= import_func_count) {
+            deep_error("import function index >= function count in import section");
+            return;
         }
+        import = module->import_section[i];
+        if(import->tag == Func_TAG_TYPE) {
+            func = module->func_section[import_func_index] = (DEEPFunction*)deep_malloc(sizeof(DEEPFunction));
+            memset(func, 0, sizeof(func));
+            func->is_import = true;
+            func->func_type = module->type_section[import->index];
+            import_func_index++;
+        }
+    }
+    /* functions belong to function section self */
+    for (uint32_t i = import_func_count; i < all_func_count; i++) {
+        func = module->func_section[i] = (DEEPFunction*)deep_malloc(sizeof(DEEPFunction));
+        memset(func, 0, sizeof(func));
+        type_index = read_leb_u32((uint8_t **)&p);
+        code_size = read_leb_u32((uint8_t **)&p_code);
+        p_code_temp = p_code;
+        func->is_import = false;
+        func->func_type = module->type_section[type_index];
+        // The local variables also include the parameters
+        local_vars_count = func->func_type->param_count;
+        local_set_count = func->func_type->param_count + read_leb_u32((uint8_t**)&p_code);
+        if (local_set_count == 0) {
+            func->local_var_types = NULL;
+        } else {
+            func->local_var_types = (LocalVarCluster *)deep_malloc(local_set_count * sizeof(LocalVarCluster));
+            // For parameters, the count is 1, and the type
+            // is the type of the corresponding parameter
+            for (uint32_t j = 0; j < func->func_type->param_count; j++) {
+                func->local_var_types[j].count = 1;
+                func->local_var_types[j].local_type = func->func_type->type[j];
+            }
+            for (uint32_t j = func->func_type->param_count; j < local_set_count; j++) {
+                func->local_var_types[j].count = read_leb_u32((uint8_t **)&p_code);
+                local_vars_count += func->local_var_types[j].count;
+                func->local_var_types[j].local_type = READ_BYTE(p_code);
+            }
+        }
+        func->code_begin = (uint8_t*)p_code;
+        func->local_vars_count = local_vars_count;
+        func->code_size = code_size - (uint32_t)(p_code - p_code_temp);
+        p_code = p_code_temp + code_size;
     }
 }
 
-//读取导出段
+/**
+ * @brief read export section
+ *
+ * @param p
+ * @param module
+ */
 static void decode_export_section(const uint8_t* p, DEEPModule* module) {
     uint32_t export_count = read_leb_u32((uint8_t**)&p);
     uint32_t name_len;
@@ -195,7 +254,60 @@ static void decode_export_section(const uint8_t* p, DEEPModule* module) {
     }
 }
 
-//读取数据段
+/**
+ * @brief load import section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_import_section(const uint8_t* p, DEEPModule* module)
+{
+    uint32_t import_count = read_leb_u32((uint8_t**)&p);
+    uint32_t module_name_len = 0;
+    uint32_t member_name_len = 0;
+    DEEPImport* Import = NULL;
+    module->import_count = import_count;
+    module->import_section = (DEEPImport**)deep_malloc(import_count * sizeof(DEEPImport*));
+    for (uint32_t i = 0; i < import_count; i ++) {
+        Import = module->import_section[i] = (DEEPImport *)deep_malloc(sizeof(DEEPImport));
+        /* read import module name */
+        module_name_len = read_leb_u32((uint8_t**)&p);
+        Import->module_name = str_gen(p, module_name_len);
+        p += module_name_len;
+        /* read member name */
+        member_name_len = read_leb_u32((uint8_t**)&p);
+        Import->member_name = str_gen(p, member_name_len);
+        p += member_name_len;
+        /* read tag(type of this record) and index */
+        Import->tag = READ_BYTE(p);
+        Import->index = read_leb_u32((uint8_t**)&p);
+        switch (Import->tag)
+        {
+        case Func_TAG_TYPE:
+            module->import_function_count += 1;
+            break;
+        case TAB_TAG_TYPE:
+            module->import_table_count += 1;
+            break;
+        case MEM_TAG_TYPE:
+            module->import_memory_count += 1;
+            break;
+        case GLOBAL_TAG_TYPE:
+            module->import_global_count += 1;
+            break;
+        default:
+            deep_error("mismatch tag type");
+            break;
+        }
+    }
+}
+
+/**
+ * @brief read data section
+ *
+ * @param p
+ * @param module
+ */
 static void decode_data_section(const uint8_t* p, DEEPModule* module) {
     uint32_t data_count = read_leb_u32((uint8_t**)&p);
     DEEPData* Data;
@@ -213,11 +325,16 @@ static void decode_data_section(const uint8_t* p, DEEPModule* module) {
     }
 }
 
-//依次遍历每个section，遇到需要的就load进module
+/**
+ * @brief load sections one by one.
+ *
+ * @param module
+ * @param section_list
+ */
 static void decode_each_sections(DEEPModule* module, section_listnode* section_list) {
 
     section_listnode* section = section_list;
-    const uint8_t *      buf = NULL, *p_code = NULL;
+    const uint8_t *buf = NULL, *p_code = NULL;
     while (section->section_type != SECTION_TYPE_CODE) {
         section = section->next;
     }
@@ -230,14 +347,12 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
             break;
         case SECTION_TYPE_TYPE:
             decode_type_section(buf, module);
-
             break;
         case SECTION_TYPE_IMPORT:
-
+            decode_import_section(buf, module);
             break;
         case SECTION_TYPE_FUNC:
             decode_func_section(buf, module, p_code);
-
             break;
         case SECTION_TYPE_TABLE:
 
@@ -250,7 +365,6 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
             break;
         case SECTION_TYPE_EXPORT:
             decode_export_section(buf, module);
-
             break;
         case SECTION_TYPE_START:
 
@@ -289,6 +403,7 @@ DEEPModule* deep_load(uint8_t** p, int size) {
         deep_error("module malloc fail");
         return NULL;
     }
+    memset(module, 0, sizeof(DEEPModule));
     decode_each_sections(module, section_list);
     section_listnode* dummy = section_list, *q;
     while(dummy != NULL) {
@@ -345,19 +460,19 @@ uint8_t read_mem8(uint8_t* mem, uint32_t offset) {
 
 uint16_t read_mem16(uint8_t* mem, uint32_t offset) {
     uint16_t buf[1];
-    read_memory(mem, buf, offset, 2);
+    read_memory(mem, (uint8_t *)buf, offset, 2);
     return buf[0];
 }
 
 uint32_t read_mem32(uint8_t* mem, uint32_t offset) {
     uint32_t buf[1];
-    read_memory(mem, buf, offset, 4);
+    read_memory(mem, (uint8_t *)buf, offset, 4);
     return buf[0];
 }
 
 uint64_t read_mem64(uint8_t* mem, uint32_t offset) {
     uint64_t buf[1];
-    read_memory(mem, buf, offset, 8);
+    read_memory(mem, (uint8_t *)buf, offset, 8);
     return buf[0];
 }
 
@@ -370,19 +485,19 @@ void write_mem8(uint8_t* mem, uint8_t val, uint32_t offset) {
 void write_mem16(uint8_t* mem, uint16_t val, uint32_t offset) {
     uint16_t buf[1];
     buf[0] = val;
-    write_memory(mem, buf, offset, 2);
+    write_memory(mem, (uint8_t *)buf, offset, 2);
 }
 
 void write_mem32(uint8_t* mem, uint32_t val, uint32_t offset) {
     uint32_t buf[1];
     buf[0] = val;
-    write_memory(mem, buf, offset, 4);
+    write_memory(mem, (uint8_t *)buf, offset, 4);
 }
 
 void write_mem64(uint8_t* mem, uint64_t val, uint32_t offset) {
     uint64_t buf[1];
     buf[0] = val;
-    write_memory(mem, buf, offset, 8);
+    write_memory(mem, (uint8_t *)buf, offset, 8);
 }
 
 void type_section_dump(DEEPModule* module) {
