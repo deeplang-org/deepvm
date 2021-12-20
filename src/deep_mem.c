@@ -7,7 +7,6 @@
 #include "deep_log.h"
 #include "deep_mem.h"
 
-//重要：DeepMem部分的跳表存在bug，因此在修复之前，先启用该宏，切换至C语言原生内存管理
 // #define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
 
 #ifdef REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
@@ -21,7 +20,7 @@ mem_pool_t *pool;
   Calculate at runtime (during deep_init()).
   This is just a patch; will prolly need better solutions.
 */
-uint8_t block_payload_offset;
+static uint32_t block_payload_offset;
 
 static void *deep_malloc_fast_bins (uint32_t size);
 static void *deep_malloc_sorted_bins (uint32_t size);
@@ -128,9 +127,9 @@ bool deep_mem_init (void *mem, uint32_t size)
   {
     fast_block_t block;
     block_payload_offset
-      = (uint8_t)((uint32_t)&block.payload - (uint32_t)&block.head);
+      = ((uint32_t)&block.payload - (uint32_t)&block.head);
   }
-  // PRINT_ARG("Offset: %u\n", block_payload_offset);
+  PRINT_ARG("Offset: %u\n", block_payload_offset);
 
   if (size < sizeof (mem_pool_t))
     {
