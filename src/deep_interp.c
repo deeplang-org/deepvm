@@ -34,6 +34,8 @@
     (deep_error("Arithmetic Error: Divide by Zero!"), exit(1), 0), \
         (TYPE)DIVIDEND / (TYPE)DIVISOR)
 
+typedef void (*built_in_function)(DEEPExecEnv *env, DEEPModule *module);
+
 //创建操作数栈
 DEEPStack *stack_cons(void) {
     DEEPStack *stack = (DEEPStack *) deep_malloc(sizeof(DEEPStack));
@@ -293,6 +295,12 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 current_env->sp = sp;
                 call_function(current_env, module, func_index);
                 sp = current_env->sp;
+                break;
+            }
+            /* 参数指令 */
+            case op_drop: {
+                ip++;
+                popU32();
                 break;
             }
             /* 内存指令 */
@@ -604,7 +612,18 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     //执行frame中函数
     //sp要下移，栈顶元素即为函数参数
 
-    exec_instructions(current_env, module);
+    //处理外部函数
+    if (func->is_import) {
+        //TODO: func_index不一定是对应的函数，因为中间可能参杂其他类型的导入信息
+        char *name = module->import_section[func_index]->member_name;
+
+        //TODO: 用DEEPHash避免多次比较
+        if (!strcmp(name, "puts")) {
+            puts("0");
+        }
+    } else {
+        exec_instructions(current_env, module);
+    }
 
     //如果遇到了return指令，则跳出到这一步就可以了
     //当jump_depth为负数时，表示正在执行return指令
