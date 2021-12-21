@@ -65,8 +65,14 @@ static void deep_puti(DEEPExecEnv *env, DEEPModule *module) {
     pushS32(0);
 }
 
+static void deep_putf(DEEPExecEnv *env, DEEPModule *module) {
+    uint32_t *sp = env->cur_frame->sp;
+    printf("%f", popF32());
+    pushS32(0);
+}
+
 //表：所有的built-in函数
-static built_in_function built_ins[] = { &deep_puts, &deep_puti };
+static built_in_function built_ins[] = { &deep_puts, &deep_puti, &deep_putf };
 
 //创建操作数栈
 DEEPStack *stack_cons(void) {
@@ -651,6 +657,8 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
             (*(built_ins[0]))(current_env, module);
         } else if (!strcmp(name, "puti")) {
             (*(built_ins[1]))(current_env, module);
+        } else if (!strcmp(name, "putf")) {
+            (*(built_ins[2]))(current_env, module);
         } 
         else {
             deep_error("Invalid built-in function \"%s\"!\n", name);
