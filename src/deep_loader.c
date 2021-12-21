@@ -188,7 +188,7 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
             return;
         }
         import = module->import_section[i];
-        if(import->tag == Func_TAG_TYPE) {
+        if(import->tag == FUNC_TAG_TYPE) {
             func = module->func_section[import_func_index] = (DEEPFunction*)deep_malloc(sizeof(DEEPFunction));
             memset(func, 0, sizeof(DEEPFunction));
             func->is_import = true;
@@ -283,7 +283,7 @@ static void decode_import_section(const uint8_t* p, DEEPModule* module)
         Import->index = read_leb_u32((uint8_t**)&p);
         switch (Import->tag)
         {
-        case Func_TAG_TYPE:
+        case FUNC_TAG_TYPE:
             module->import_function_count += 1;
             break;
         case TAB_TAG_TYPE:

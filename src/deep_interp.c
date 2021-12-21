@@ -649,8 +649,25 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
 
     //处理外部函数
     if (func->is_import) {
-        //TODO: func_index不一定是对应的函数，因为中间可能参杂其他类型的导入信息
-        char *name = module->import_section[func_index]->member_name;
+        //TODO: 用DEEPHash快速找。
+        uint32_t count = 0;
+        char *name = NULL;
+        for (uint32_t i = 0; i < module->import_count; i++) {
+            if (count == func_index) {
+                 name = module->import_section[i]->member_name;
+                 break;
+            }
+
+            if (module->import_section[i]->tag == FUNC_TAG_TYPE) {
+                count++;
+            }
+        }
+        
+        if (name == NULL) {
+            printf("NUM: %d\n", func_index);
+            deep_error("Cannot find built-in function!\n");
+            exit(-1); 
+        } 
 
         //TODO: 用DEEPHash避免多次比较
         if (!strcmp(name, "puts")) {
