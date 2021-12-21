@@ -55,12 +55,18 @@ static void deep_puts(DEEPExecEnv *env, DEEPModule *module) {
         return;
     }
 
-    puts((char *)data->data);
+    printf("%s",(char *)data->data);
+    pushS32(0);
+}
+
+static void deep_puti(DEEPExecEnv *env, DEEPModule *module) {
+    uint32_t *sp = env->cur_frame->sp;
+    printf("%d", popS32());
     pushS32(0);
 }
 
 //表：所有的built-in函数
-static built_in_function built_ins[] = { &deep_puts };
+static built_in_function built_ins[] = { &deep_puts, &deep_puti };
 
 //创建操作数栈
 DEEPStack *stack_cons(void) {
@@ -643,8 +649,11 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
         //TODO: 用DEEPHash避免多次比较
         if (!strcmp(name, "puts")) {
             (*(built_ins[0]))(current_env, module);
-        } else {
-            deep_error("Invalid built-in function %s!\n", name);
+        } else if (!strcmp(name, "puti")) {
+            (*(built_ins[1]))(current_env, module);
+        } 
+        else {
+            deep_error("Invalid built-in function \"%s\"!\n", name);
             exit(-1);
         }
     } else {
@@ -656,7 +665,6 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     if (current_env->jump_depth < 0) {
         current_env->jump_depth = 0;
     }
-
     //执行完毕退栈
     current_env->cur_frame = frame->prev_func_frame;
     current_env->control_stack->current_frame_index--;

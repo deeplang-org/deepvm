@@ -7,7 +7,7 @@
 #include "deep_log.h"
 #include "deep_mem.h"
 
-// #define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
+#define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
 
 #ifdef REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
 #include "stdlib.h"
