@@ -436,6 +436,12 @@ void module_free(DEEPModule *module) {
         deep_free(module->export_section[i]);
     }
     deep_free(module->export_section);
+    for (i = 0; i < module->import_count; i++) {
+        deep_free(module->import_section[i]->module_name);
+        deep_free(module->import_section[i]->member_name);
+        deep_free(module->import_section[i]);
+    }
+    deep_free(module->import_section);
     deep_free(module);
 }
 
