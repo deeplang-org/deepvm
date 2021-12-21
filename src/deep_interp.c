@@ -36,6 +36,32 @@
 
 typedef void (*built_in_function)(DEEPExecEnv *env, DEEPModule *module);
 
+static void deep_puts(DEEPExecEnv *env, DEEPModule *module) {
+    uint32_t *sp = env->cur_frame->sp;
+    uint32_t offset = popU32();
+    DEEPData *data;
+    bool data_found = false;
+    //找到包含该offset的数据段信息。以后可以考虑用DEEPHash优化
+    for (uint32_t i = 0; i < module->data_count; i++) {
+        data = module->data_section[i];
+        if (data->offset <= offset && offset < data->offset + data->datasize) {
+            data_found = true;
+            break;
+        }
+    }
+
+    if (!data_found) {
+        pushS32(-1);
+        return;
+    }
+
+    puts((char *)data->data);
+    pushS32(0);
+}
+
+//表：所有的built-in函数
+static built_in_function built_ins[] = { &deep_puts };
+
 //创建操作数栈
 DEEPStack *stack_cons(void) {
     DEEPStack *stack = (DEEPStack *) deep_malloc(sizeof(DEEPStack));
@@ -609,9 +635,6 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     current_env->control_stack->frames[
     current_env->control_stack->current_frame_index] = frame;
 
-    //执行frame中函数
-    //sp要下移，栈顶元素即为函数参数
-
     //处理外部函数
     if (func->is_import) {
         //TODO: func_index不一定是对应的函数，因为中间可能参杂其他类型的导入信息
@@ -619,7 +642,10 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
 
         //TODO: 用DEEPHash避免多次比较
         if (!strcmp(name, "puts")) {
-            puts("0");
+            (*(built_ins[0]))(current_env, module);
+        } else {
+            deep_error("Invalid built-in function %s!\n", name);
+            exit(-1);
         }
     } else {
         exec_instructions(current_env, module);
