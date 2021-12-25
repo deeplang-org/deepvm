@@ -34,7 +34,14 @@
     (deep_error("Arithmetic Error: Divide by Zero!"), exit(1), 0), \
         (TYPE)DIVIDEND / (TYPE)DIVISOR)
 
+typedef void *(*fun_ptr_t)(void *);
+
 typedef void (*built_in_function)(DEEPExecEnv *env, DEEPModule *module);
+
+typedef struct {
+    char *func_name;
+    fun_ptr_t func;
+} DEEPNative;
 
 static void deep_puts(DEEPExecEnv *env, DEEPModule *module) {
     uint32_t *sp = env->cur_frame->sp;
@@ -71,8 +78,24 @@ static void deep_putf(DEEPExecEnv *env, DEEPModule *module) {
     pushS32(0);
 }
 
+#define DEEPNATIVE_COUNT 3
+
 //表：所有的built-in函数
-static built_in_function built_ins[] = { &deep_puts, &deep_puti, &deep_putf };
+static DEEPNative g_DeepNativeMap[] = {
+    {"puts", (fun_ptr_t)deep_puts},
+    {"puti", (fun_ptr_t)deep_puti},
+    {"putf", (fun_ptr_t)deep_putf},
+};
+
+static void deep_native_call(const char *name, DEEPExecEnv *env, DEEPModule *module) {
+    //TODO: 用DEEPHash避免多次比较
+        for (unsigned i = 0; i < DEEPNATIVE_COUNT; i++) {
+            if (!strcmp(name, g_DeepNativeMap[i].func_name)) {
+                ((built_in_function)(g_DeepNativeMap[i].func))(env, module);
+                break;
+            }
+        }
+}
 
 //创建操作数栈
 DEEPStack *stack_cons(void) {
@@ -667,20 +690,9 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
             printf("NUM: %d\n", func_index);
             deep_error("Cannot find built-in function!\n");
             exit(-1); 
-        } 
-
-        //TODO: 用DEEPHash避免多次比较
-        if (!strcmp(name, "puts")) {
-            (*(built_ins[0]))(current_env, module);
-        } else if (!strcmp(name, "puti")) {
-            (*(built_ins[1]))(current_env, module);
-        } else if (!strcmp(name, "putf")) {
-            (*(built_ins[2]))(current_env, module);
-        } 
-        else {
-            deep_error("Invalid built-in function \"%s\"!\n", name);
-            exit(-1);
         }
+
+        deep_native_call(name, current_env, module);
     } else {
         exec_instructions(current_env, module);
     }
