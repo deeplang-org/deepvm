@@ -39,7 +39,7 @@
 
 enum ImportAndExportTagType
 {
-    Func_TAG_TYPE = 0,
+    FUNC_TAG_TYPE = 0,
     TAB_TAG_TYPE,
     MEM_TAG_TYPE,
     GLOBAL_TAG_TYPE

@@ -34,6 +34,69 @@
     (deep_error("Arithmetic Error: Divide by Zero!"), exit(1), 0), \
         (TYPE)DIVIDEND / (TYPE)DIVISOR)
 
+typedef void *(*fun_ptr_t)(void *);
+
+typedef void (*built_in_function)(DEEPExecEnv *env, DEEPModule *module);
+
+typedef struct {
+    char *func_name;
+    fun_ptr_t func;
+} DEEPNative;
+
+static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
+    uint32_t *sp = env->cur_frame->sp;
+    uint32_t offset = popU32();
+    DEEPData *data;
+    bool data_found = false;
+    //找到包含该offset的数据段信息。以后可以考虑用DEEPHash优化
+    for (uint32_t i = 0; i < module->data_count; i++) {
+        data = module->data_section[i];
+        if (data->offset <= offset && offset < data->offset + data->datasize) {
+            data_found = true;
+            break;
+        }
+    }
+
+    if (!data_found) {
+        pushS32(-1);
+        return;
+    }
+
+    printf("%s",(char *)data->data);
+    pushS32(0);
+}
+
+static void native_puti(DEEPExecEnv *env, DEEPModule *module) {
+    uint32_t *sp = env->cur_frame->sp;
+    printf("%d", popS32());
+    pushS32(0);
+}
+
+static void native_putf(DEEPExecEnv *env, DEEPModule *module) {
+    uint32_t *sp = env->cur_frame->sp;
+    printf("%f", popF32());
+    pushS32(0);
+}
+
+#define DEEPNATIVE_COUNT 3
+
+//表：所有的built-in函数
+static DEEPNative g_DeepNativeMap[] = {
+    {"puts", (fun_ptr_t)native_puts},
+    {"puti", (fun_ptr_t)native_puti},
+    {"putf", (fun_ptr_t)native_putf},
+};
+
+static void deep_native_call(const char *name, DEEPExecEnv *env, DEEPModule *module) {
+    //TODO: 用DEEPHash避免多次比较
+        for (unsigned i = 0; i < DEEPNATIVE_COUNT; i++) {
+            if (!strcmp(name, g_DeepNativeMap[i].func_name)) {
+                ((built_in_function)(g_DeepNativeMap[i].func))(env, module);
+                break;
+            }
+        }
+}
+
 //创建操作数栈
 DEEPStack *stack_cons(void) {
     DEEPStack *stack = (DEEPStack *) deep_malloc(sizeof(DEEPStack));
@@ -293,6 +356,12 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 current_env->sp = sp;
                 call_function(current_env, module, func_index);
                 sp = current_env->sp;
+                break;
+            }
+            /* 参数指令 */
+            case op_drop: {
+                ip++;
+                popU32();
                 break;
             }
             /* 内存指令 */
@@ -601,17 +670,38 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     current_env->control_stack->frames[
     current_env->control_stack->current_frame_index] = frame;
 
-    //执行frame中函数
-    //sp要下移，栈顶元素即为函数参数
+    //处理外部函数
+    if (func->is_import) {
+        //TODO: 用DEEPHash快速找。
+        uint32_t count = 0;
+        char *name = NULL;
+        for (uint32_t i = 0; i < module->import_count; i++) {
+            if (count == func_index) {
+                 name = module->import_section[i]->member_name;
+                 break;
+            }
 
-    exec_instructions(current_env, module);
+            if (module->import_section[i]->tag == FUNC_TAG_TYPE) {
+                count++;
+            }
+        }
+        
+        if (name == NULL) {
+            printf("NUM: %d\n", func_index);
+            deep_error("Cannot find built-in function!\n");
+            exit(-1); 
+        }
+
+        deep_native_call(name, current_env, module);
+    } else {
+        exec_instructions(current_env, module);
+    }
 
     //如果遇到了return指令，则跳出到这一步就可以了
     //当jump_depth为负数时，表示正在执行return指令
     if (current_env->jump_depth < 0) {
         current_env->jump_depth = 0;
     }
-
     //执行完毕退栈
     current_env->cur_frame = frame->prev_func_frame;
     current_env->control_stack->current_frame_index--;

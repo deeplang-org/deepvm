@@ -196,7 +196,7 @@ deep_malloc(uint32_t size)
 }
 #endif
 
-/* Note that aligning is done in deep_malloc, the size shoulde already be 
+/* Note that aligning is done in deep_malloc, the size should already be 
  * aligned here.
  */
 static void *
@@ -206,7 +206,6 @@ deep_malloc_fast_bins(block_size_t aligned_size)
   bool P_flag = false;
   fast_block_t *ret = NULL;
   block_size_t payload_size;
-  
   if (pool->fast_bins[offset].addr != NULL) 
   {
     // PRINT_ARG("%s", "Fast block from stack\n");
@@ -214,6 +213,7 @@ deep_malloc_fast_bins(block_size_t aligned_size)
     pool->fast_bins[offset].addr = ret->payload.next;
     P_flag = prev_block_is_allocated(&ret->head);
     payload_size = block_get_size(&ret->head);
+
   }
   // When there are no available fast blocks, grab at the end of the remainder.
   else if (aligned_size <= get_remainder_size(pool)) 
@@ -232,7 +232,7 @@ deep_malloc_fast_bins(block_size_t aligned_size)
     return NULL;
   }
 
-  memset (&ret->payload, 0, payload_size);
+  memset (&ret->payload, 0, aligned_size);
   block_set_A_flag (&ret->head, true);
   block_set_P_flag (&ret->head, P_flag);
   pool->free_memory -= payload_size;
@@ -332,7 +332,6 @@ deep_free_fast_bins(void *ptr)
   // block size is payload size according to spec.
   block_size_t payload_size = block_get_size(&block->head);
   uint32_t offset = ((payload_size + block_payload_offset) >> 3) - 1;
-
   memset (&block->payload, 0, payload_size);
   block_set_A_flag (&block->head, false);
   pool->free_memory += payload_size;
