@@ -43,7 +43,7 @@ typedef struct {
     fun_ptr_t func;
 } DEEPNative;
 
-static void deep_puts(DEEPExecEnv *env, DEEPModule *module) {
+static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
     uint32_t *sp = env->cur_frame->sp;
     uint32_t offset = popU32();
     DEEPData *data;
@@ -66,13 +66,13 @@ static void deep_puts(DEEPExecEnv *env, DEEPModule *module) {
     pushS32(0);
 }
 
-static void deep_puti(DEEPExecEnv *env, DEEPModule *module) {
+static void native_puti(DEEPExecEnv *env, DEEPModule *module) {
     uint32_t *sp = env->cur_frame->sp;
     printf("%d", popS32());
     pushS32(0);
 }
 
-static void deep_putf(DEEPExecEnv *env, DEEPModule *module) {
+static void native_putf(DEEPExecEnv *env, DEEPModule *module) {
     uint32_t *sp = env->cur_frame->sp;
     printf("%f", popF32());
     pushS32(0);
@@ -82,9 +82,9 @@ static void deep_putf(DEEPExecEnv *env, DEEPModule *module) {
 
 //表：所有的built-in函数
 static DEEPNative g_DeepNativeMap[] = {
-    {"puts", (fun_ptr_t)deep_puts},
-    {"puti", (fun_ptr_t)deep_puti},
-    {"putf", (fun_ptr_t)deep_putf},
+    {"puts", (fun_ptr_t)native_puts},
+    {"puti", (fun_ptr_t)native_puti},
+    {"putf", (fun_ptr_t)native_putf},
 };
 
 static void deep_native_call(const char *name, DEEPExecEnv *env, DEEPModule *module) {
