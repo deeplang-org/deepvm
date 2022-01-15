@@ -13,8 +13,7 @@
 typedef enum DEEPFrameType {
     FUNCTION_FRAME,
     BLOCK_FRAME,
-    IF_THEN_FRAME,
-    IF_ELSE_FRAME,
+    IF_FRAME,
     LOOP_FRAME,
 } DEEPFrameType;
 
@@ -68,7 +67,7 @@ void stack_free(DEEPStack *stack);
 void control_stack_free(DEEPControlStack *stack);
 
 //读结构体
-void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_else);
+void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset);
 
 int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module);
 
