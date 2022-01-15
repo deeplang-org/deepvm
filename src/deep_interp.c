@@ -251,21 +251,24 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_
     }
 }
 
-//执行代码块指令
-void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
+//执行代码块指令，true表示正常结束，false表示碰到br语句而跳出。
+bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
     uint32_t *sp = current_env->cur_frame->sp;
     uint8_t *ip = current_env->cur_frame->function->code_begin;
     uint8_t *ip_end = ip + current_env->cur_frame->function->code_size;
     uint8_t *memory = current_env->memory;
-    while (ip < ip_end) {
+    while (current_env->jump_depth || ip < ip_end) {
         //判断是否需要跳出
         if (current_env->jump_depth) {
             current_env->jump_depth--;
-            break;
+            //更新env
+            current_env->sp = sp;
+            return false;
         }
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
+        printf("op: %x\n", opcode);
         switch (opcode) {
             /* 控制指令 */
             case op_unreachable: {
@@ -277,9 +280,10 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 break;
             }
-            case op_block: {
+            case op_block:
+            case op_loop: {
                 ip++;
-                //暂时不支持WASM限制放开之后提供的多返s回值和传参数机制
+                //暂时不支持WASM限制放开之后提供的多返回值和传参数机制
                 uint8_t return_type = READ_BYTE(ip);
                 DEEPType *type = deep_malloc(sizeof(DEEPType));
                 //block无参数
@@ -308,7 +312,8 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 block->func_type = type;
                 //执行block
                 current_env->sp = sp;
-                ip = enter_frame(current_env, module, block, BLOCK_FRAME);
+                ip = enter_frame(current_env, module, block, 
+                        opcode == op_block ? BLOCK_FRAME : LOOP_FRAME);
                 sp = current_env->sp;
                 //释放空间
                 deep_free(type);
@@ -626,11 +631,12 @@ void exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
         //检查操作数栈是否溢出
         if (sp > current_env->sp_end) {
             deep_error("Error: Operand stack overflow!\r\n");
-            return;
+            return false;
         }
     }
     //更新env
     current_env->sp = sp;
+    return true;
 }
 
 //调用普通函数
@@ -788,7 +794,8 @@ uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
 
     //执行frame中函数
     //sp要下移，栈顶元素即为函数参数
-    exec_instructions(current_env, module);
+    //如果发现在loop中，则循环执行，直至离开loop。
+    while (!exec_instructions(current_env, module) && current_env->jump_depth == 0);
 
     //执行完毕退栈
     current_env->control_stack->current_frame_index--;
@@ -800,7 +807,5 @@ uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
     //需要caller处理
     deep_free(frame);
 
-    return frame_type == LOOP_FRAME ?
-        block->code_begin :
-        block->code_begin + block->code_size;
+    return block->code_begin + block->code_size;
 }
