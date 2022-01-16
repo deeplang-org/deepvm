@@ -146,7 +146,7 @@ void control_stack_free(DEEPControlStack *stack) {
 
 //读结构体的范围
 //暂时只支持block
-void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_else) {
+void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
     *start = ip;
     bool finish = false;
     uint8_t net_bracket = 1;
@@ -164,8 +164,16 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_
                 finish = true;
             }
             break;
+        case op_else:
+            ip++;
+            net_bracket--;
+            if (net_bracket == 0) {
+                *offset = (uint32_t)(ip - *start);
+                finish = true;
+            }
+            net_bracket++;
+            break;
         //面对其他指令，只要正常阅读，不需要解释；这个函数只找end或else
-        //不过现在甚至不考虑else；只在做block的情况
         //无立即数指令：
         case op_return:
         case op_nop:
@@ -236,6 +244,8 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset, bool search_for_
             break;
         //需要特殊考虑的指令：
         case op_block:
+        case op_loop:
+        case op_if:
             ip++;
             READ_BYTE(ip);
             net_bracket++;
@@ -268,7 +278,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
-        printf("op: %x\n", opcode);
+        // printf("op: %x\n", opcode);
         switch (opcode) {
             /* 控制指令 */
             case op_unreachable: {
@@ -297,7 +307,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 //读取block主体
                 uint8_t *start;
                 uint32_t offset;
-                read_block(ip, &start, &offset, false);
+                read_block(ip, &start, &offset);
                 //为block创建DEEPFunction结构体
                 DEEPFunction *block = deep_malloc(sizeof(DEEPFunction));
                 if (block == NULL) {
@@ -314,6 +324,57 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 current_env->sp = sp;
                 ip = enter_frame(current_env, module, block, 
                         opcode == op_block ? BLOCK_FRAME : LOOP_FRAME);
+                sp = current_env->sp;
+                //释放空间
+                deep_free(type);
+                deep_free(block);
+                break;
+            }
+            case op_if: {
+                ip++;
+                //暂时不支持WASM限制放开之后提供的多返回值和传参数机制
+                uint8_t return_type = READ_BYTE(ip);
+                DEEPType *type = deep_malloc(sizeof(DEEPType));
+                //if无参数
+                type->param_count = 0;
+                type->ret_count = return_type == op_type_void ? 0 : 1;
+                //设置返回值的类型（如果有）
+                if (type->ret_count == 1) {
+                    type->type = deep_malloc(1);
+                    type->type[0] = return_type;
+                }
+                //读取if两个分支的主体
+                uint8_t *then_start, *else_start;
+                uint32_t then_offset, else_offset;
+                read_block(ip, &then_start, &then_offset);
+                else_start = then_start + then_offset;
+                read_block(else_start, &else_start, &else_offset);
+                //为block创建DEEPFunction结构体
+                DEEPFunction *block = deep_malloc(sizeof(DEEPFunction));
+                if (block == NULL) {
+                    deep_error("Heap overflow at opcode %x!", opcode);
+                    exit(1);
+                }
+                //block的局部变量和当前function的一致
+                block->local_var_types = current_env->cur_frame->function->local_var_types;
+                block->local_vars_count = current_env->cur_frame->function->local_vars_count;
+                //执行block
+                block->func_type = type;
+                current_env->sp = sp;
+                if (popU32()) {
+                    //执行then分支，完成之后需要把ip设置到end的位置
+                    block->code_begin = then_start;
+                    block->code_size = then_offset;
+                    enter_frame(current_env, module, block, 
+                        opcode == IF_FRAME);
+                    ip = else_start + else_offset;
+                } else {
+                    //执行else分支，完成之后ip自动在end的位置
+                    block->code_begin = else_start;
+                    block->code_size = else_offset;
+                    ip = enter_frame(current_env, module, block, 
+                        opcode == IF_FRAME);
+                }
                 sp = current_env->sp;
                 //释放空间
                 deep_free(type);
@@ -350,6 +411,8 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 break;
             }
+            //如果碰到else，则表示当前在then分支，并且执行完毕
+            case op_else:
             case op_end: {
                 ip++;
                 break;
@@ -795,7 +858,9 @@ uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
     //执行frame中函数
     //sp要下移，栈顶元素即为函数参数
     //如果发现在loop中，则循环执行，直至离开loop。
-    while (!exec_instructions(current_env, module) && current_env->jump_depth == 0);
+    while (!exec_instructions(current_env, module) && current_env->jump_depth == 0) {
+        if (frame_type != LOOP_FRAME) break;
+    }
 
     //执行完毕退栈
     current_env->control_stack->current_frame_index--;
