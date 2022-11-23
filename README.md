@@ -59,13 +59,13 @@ make
 Current is build path.
 
 ```shell
-../bin/deepvm.exe ../example/example.wasm
+../bin/deepvm ../example/example.wasm
 ```
 
 ##### Debug deepvm
 
 ```
-gdb ../bin/deepvm.exe
+gdb ../bin/deepvm
 r ../example/example.wasm
 ```
 
