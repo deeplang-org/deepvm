@@ -154,6 +154,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t)*ip;
+        // printf("%x\n", opcode);
         switch (opcode)
         {
         case op_end:

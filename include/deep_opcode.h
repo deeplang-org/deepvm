@@ -72,6 +72,7 @@ enum DEEPOpcode {
     f32_nearest = 0x90,
     f32_sqrt = 0x91,
     //比较指令
+    i32_eqz = 0x45,
     i32_eq = 0x46,
     i32_ne = 0x47,
     i32_lts = 0x48,
@@ -82,7 +83,6 @@ enum DEEPOpcode {
     i32_leu = 0x4D,
     i32_ges = 0x4E,
     i32_geu = 0x4F,
-    i32_eqz = 0x54,
     //转换指令
     i32_trunc_f32_s = 0xA8,
     i32_trunc_f32_u = 0xA9,
