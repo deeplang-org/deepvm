@@ -209,6 +209,23 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i32_trunc_f32_s:
         case i32_trunc_f32_u:
         case i32_xor:
+        case i64_eqz:
+        case i64_eq:
+        case i64_ne:
+        case i64_lts:
+        case i64_ltu:
+        case i64_gts:
+        case i64_gtu:
+        case i64_les:
+        case i64_leu:
+        case i64_ges:
+        case i64_geu:
+        case f32_eq:
+        case f32_ne:
+        case f32_lt:
+        case f32_gt:
+        case f32_le:
+        case f32_ge:
         case f32_abs:
         case f32_add:
         case f32_ceil:
@@ -225,6 +242,12 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case f32_sqrt:
         case f32_sub:
         case f32_trunc:
+        case f64_eq:
+        case f64_ne:
+        case f64_lt:
+        case f64_gt:
+        case f64_le:
+        case f64_ge:
         case op_drop:
         case op_select:
             ip++;
@@ -323,7 +346,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 block->func_type = type;
                 //执行block
                 current_env->sp = sp;
-                ip = enter_frame(current_env, module, block, 
+                ip = enter_frame(current_env, module, block,
                         opcode == op_block ? BLOCK_FRAME : LOOP_FRAME);
                 sp = current_env->sp;
                 //释放空间
@@ -366,14 +389,14 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                     //执行then分支，完成之后需要把ip设置到end的位置
                     block->code_begin = then_start;
                     block->code_size = then_offset;
-                    enter_frame(current_env, module, block, 
+                    enter_frame(current_env, module, block,
                         opcode == IF_FRAME);
                     ip = else_start + else_offset;
                 } else {
                     //执行else分支，完成之后ip自动在end的位置
                     block->code_begin = else_start;
                     block->code_size = else_offset;
-                    ip = enter_frame(current_env, module, block, 
+                    ip = enter_frame(current_env, module, block,
                         opcode == IF_FRAME);
                 }
                 sp = current_env->sp;
@@ -755,11 +778,11 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
                 count++;
             }
         }
-        
+
         if (name == NULL) {
             printf("NUM: %d\n", func_index);
             deep_error("Cannot find built-in function!\n");
-            exit(-1); 
+            exit(-1);
         }
 
         deep_native_call(name, current_env, module);
