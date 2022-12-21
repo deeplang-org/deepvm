@@ -20,6 +20,13 @@
 #define pushF32(x) do {float __x = (float)x;*(sp) = *(int32_t *)(&__x);sp++;} while (0)
 #define pushU32(x) *(sp) = (uint32_t)(x);sp++
 
+#define popS64() (*(int64_t *)(--sp))
+#define popF64() (*(double *)(--sp))
+#define popU64() (*(uint64_t *)(--sp))
+#define pushS64(x) *(sp) = (int64_t)(x);sp++
+#define pushF64(x) do {double __x = (double)x;*(sp) = *(int64_t *)(&__x);sp++;} while (0)
+#define pushU64(x) *(sp) = (uint64_t)(x);sp++
+
 #define READ_VALUE(Type, p) \
     (p += sizeof(Type), *(Type*)(p - sizeof(Type)))
 #define READ_UINT32(p)  READ_VALUE(uint32_t, p)
@@ -179,6 +186,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case op_nop:
         case op_unreachable:
         case i32_add:
+        case i64_add:
         case i32_and:
         case i32_clz:
         case i32_ctz:
@@ -194,6 +202,16 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i32_ltu:
         case i32_les:
         case i32_leu:
+        case i64_eq:
+        case i64_eqz:
+        case i64_ges:
+        case i64_geu:
+        case i64_gts:
+        case i64_gtu:
+        case i64_lts:
+        case i64_ltu:
+        case i64_les:
+        case i64_leu:
         case i32_mul:
         case i32_ne:
         case i32_or:
@@ -208,6 +226,18 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i32_trunc_f32_s:
         case i32_trunc_f32_u:
         case i32_xor:
+        case f32_eq:
+        case f32_ne:
+        case f32_lt:
+        case f32_gt:
+        case f32_le:
+        case f32_ge:
+        case f64_eq:
+        case f64_ne:
+        case f64_lt:
+        case f64_gt:
+        case f64_le:
+        case f64_ge:
         case f32_abs:
         case f32_add:
         case f32_ceil:
@@ -237,6 +267,8 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case op_global_set:
         case f32_const:
         case i32_const:
+        case f64_const:
+        case i64_const:
         case op_br:
         case op_br_if:
             ip++;
@@ -486,6 +518,26 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 break;
             }
             /* 比较指令 */
+            case i32_eqz: {
+                ip++;
+                int32_t a = popU32();
+                pushU32(a == 0 ? 1 : 0);
+                break;
+            }
+            case i32_eq: {
+                ip++;
+                int32_t a = popU32();
+                int32_t b = popU32();
+                pushU32(b == a ? 1 : 0);
+                break;
+            }
+            case i32_ne: {
+                ip++;
+                int32_t a = popU32();
+                int32_t b = popU32();
+                pushU32(b != a ? 1 : 0);
+                break;
+            }
             case i32_lts: {
                 ip++;
                 int32_t a = popS32();
@@ -493,24 +545,213 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushU32(b < a ? 1 : 0);
                 break;
             }
-            case i32_gtu: {
-                ip++;
-                int32_t a = popU32();
-                int32_t b = popU32();
-                pushU32(b > a ? 1 : 0);
-                break;
-            }
-            case i32_eqz: {
+            case i32_ltu: {
                 ip++;
                 uint32_t a = popU32();
-                pushU32(a == 0 ? 1 : 0);
+                uint32_t b = popU32();
+                pushU32(b < a ? 1 : 0);
                 break;
             }
             case i32_gts: {
                 ip++;
+                uint32_t a = popS32();
+                uint32_t b = popS32();
+                pushU32(b > a ? 1 : 0);
+                break;
+            }
+            case i32_gtu: {
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(b > a ? 1 : 0);
+                break;
+            }
+            case i32_les: {
+                ip++;
                 int32_t a = popS32();
                 int32_t b = popS32();
+                pushU32(b <= a ? 1 : 0);
+                break;
+            }
+            case i32_leu: {
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(b <= a ? 1 : 0);
+                break;
+            }
+            case i32_ges: {
+                ip++;
+                uint32_t a = popS32();
+                uint32_t b = popS32();
+                pushU32(b >= a ? 1 : 0);
+                break;
+            }
+            case i32_geu: {
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(b >= a ? 1 : 0);
+                break;
+            }
+            case i64_eqz: {
+                ip++;
+                int64_t a = popU64();
+                pushU32(a == 0 ? 1 : 0);
+                break;
+            }
+            case i64_eq: {
+                ip++;
+                int64_t a = popU64();
+                int64_t b = popU64();
+                pushU32(b == a ? 1 : 0);
+                break;
+            }
+            case i64_ne: {
+                ip++;
+                int64_t a = popU64();
+                int64_t b = popU64();
+                pushU32(b != a ? 1 : 0);
+                break;
+            }
+            case i64_lts: {
+                ip++;
+                int64_t a = popS64();
+                int64_t b = popS64();
+                pushU32(b < a ? 1 : 0);
+                break;
+            }
+            case i64_ltu: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU32(b < a ? 1 : 0);
+                break;
+            }
+            case i64_gts: {
+                ip++;
+                uint64_t a = popS64();
+                uint64_t b = popS64();
                 pushU32(b > a ? 1 : 0);
+                break;
+            }
+            case i64_gtu: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU32(b > a ? 1 : 0);
+                break;
+            }
+            case i64_les: {
+                ip++;
+                int64_t a = popS64();
+                int64_t b = popS64();
+                pushU32(b <= a ? 1 : 0);
+                break;
+            }
+            case i64_leu: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU32(b <= a ? 1 : 0);
+                break;
+            }
+            case i64_ges: {
+                ip++;
+                uint64_t a = popS64();
+                uint64_t b = popS64();
+                pushU32(b >= a ? 1 : 0);
+                break;
+            }
+            case i64_geu: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU32(b >= a ? 1 : 0);
+                break;
+            }
+            case f32_eq: {
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushU32(b == a ? 1 : 0);
+                break;
+            }
+            case f32_ne: {
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushU32(b != a ? 1 : 0);
+                break;
+            }
+            case f32_lt: {
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushU32(b < a ? 1 : 0);
+                break;
+            }
+            case f32_gt: {
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushU32(b > a ? 1 : 0);
+                break;
+            }
+            case f32_le: {
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushU32(b <= a ? 1 : 0);
+                break;
+            }
+            case f32_ge: {
+                ip++;
+                float a = popF32();
+                float b = popF32();
+                pushU32(b >= a ? 1 : 0);
+                break;
+            }
+            case f64_eq: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushU32(b == a ? 1 : 0);
+                break;
+            }
+            case f64_ne: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushU32(b != a ? 1 : 0);
+                break;
+            }
+            case f64_lt: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushU32(b < a ? 1 : 0);
+                break;
+            }
+            case f64_gt: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushU32(b > a ? 1 : 0);
+                break;
+            }
+            case f64_le: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushU32(b <= a ? 1 : 0);
+                break;
+            }
+            case f64_ge: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushU32(b >= a ? 1 : 0);
                 break;
             }
             /* 参数指令 */
@@ -528,6 +769,13 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 uint32_t a = popU32();
                 uint32_t b = popU32();
                 pushU32(a + b);
+                break;
+            }
+            case i64_add: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU64(a + b);
                 break;
             }
             case i32_sub: {
@@ -562,6 +810,12 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 uint32_t temp = read_leb_i32(&ip);
                 pushU32(temp);
+                break;
+            }
+            case i64_const: {
+                ip++;
+                uint64_t temp = read_leb_i64(&ip);
+                pushU64(temp);
                 break;
             }
             case i32_rems: {
@@ -660,6 +914,12 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 float temp = read_ieee_32(&ip);
                 pushF32(temp);
+                break;
+            }
+            case f64_const: {
+                ip++;
+                double temp = read_ieee_64(&ip);
+                pushF64(temp);
                 break;
             }
             // 类型转换
@@ -828,7 +1088,7 @@ int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     deep_free(main_frame);
 
     //返回栈顶元素
-    return *(current_env->sp - 1);
+    return *(int64_t *)(current_env->sp - 1);
 }
 
 //进入一个block/loop, 需要提供这个block对应的DEEPFunction（我们把block也当作函数包装进去）
