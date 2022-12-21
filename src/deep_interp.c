@@ -44,7 +44,7 @@ typedef struct {
 } DEEPNative;
 
 static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
-    uint32_t *sp = env->cur_frame->sp;
+    uint64_t *sp = env->cur_frame->sp;
     uint32_t offset = popU32();
     DEEPData *data;
     bool data_found = false;
@@ -67,13 +67,13 @@ static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
 }
 
 static void native_puti(DEEPExecEnv *env, DEEPModule *module) {
-    uint32_t *sp = env->cur_frame->sp;
+    uint64_t *sp = env->cur_frame->sp;
     printf("%d", popS32());
     pushS32(0);
 }
 
 static void native_putf(DEEPExecEnv *env, DEEPModule *module) {
-    uint32_t *sp = env->cur_frame->sp;
+    uint64_t *sp = env->cur_frame->sp;
     printf("%f", popF32());
     pushS32(0);
 }
@@ -105,7 +105,7 @@ DEEPStack *stack_cons(void) {
         return NULL;
     }
     stack->capacity = STACK_CAPACITY;
-    stack->sp = (uint32_t *) deep_malloc(sizeof(uint32_t) * STACK_CAPACITY);
+    stack->sp = (uint64_t *) deep_malloc(sizeof(uint64_t) * STACK_CAPACITY);
     if (stack->sp == NULL) {
         deep_error("Malloc area for stack error!");
     }
@@ -145,7 +145,6 @@ void control_stack_free(DEEPControlStack *stack) {
 }
 
 //读结构体的范围
-//暂时只支持block
 void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
     *start = ip;
     bool finish = false;
@@ -264,7 +263,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
 
 //执行代码块指令，true表示正常结束，false表示碰到br语句而跳出。
 bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
-    uint32_t *sp = current_env->cur_frame->sp;
+    uint64_t *sp = current_env->cur_frame->sp;
     uint8_t *ip = current_env->cur_frame->function->code_begin;
     uint8_t *ip_end = ip + current_env->cur_frame->function->code_size;
     uint8_t *memory = current_env->memory;
@@ -724,7 +723,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     frame->function = func;
     frame->prev_func_frame = current_env->cur_frame;
     frame->type = FUNCTION_FRAME;
-    frame->local_vars = (uint32_t *)deep_malloc(sizeof(uint32_t) * func->local_vars_count);
+    frame->local_vars = (uint64_t *)deep_malloc(sizeof(uint64_t) * func->local_vars_count);
     //局部变量的空间已经在函数帧中分配好
     current_env->local_vars = frame->local_vars;
     uint32_t vars_temp = func->local_vars_count;
@@ -783,7 +782,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
 }
 
 //为main函数创建帧，执行main函数
-int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
+int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
 
     //create DEEPFunction for main
     //find the index of main
@@ -812,7 +811,7 @@ int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     main_frame->sp = current_env->sp;
     main_frame->function = main_func;
     main_frame->type = FUNCTION_FRAME;
-    main_frame->local_vars = (uint32_t *)deep_malloc(sizeof(uint32_t) * main_func->local_vars_count);
+    main_frame->local_vars = (uint64_t *)deep_malloc(sizeof(uint64_t) * main_func->local_vars_count);
     //局部变量的空间已经在函数帧中分配好
     current_env->local_vars = main_frame->local_vars;
 

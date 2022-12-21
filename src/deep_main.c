@@ -13,6 +13,9 @@
 // 能分配的总空间大小（整个解释器用到的stack之外的空间全部算在里面）
 #define MEM_SIZE (2 * PAGESIZE)
 
+// 全局变量数量上限
+#define GLOBAL_VAR_COUNT 100
+
 // 声明deepmem的空间
 uint8_t deepmem[MEM_SIZE] = {0};
 
@@ -57,13 +60,13 @@ int32_t main(int argv, char **args) {
     DEEPExecEnv *current_env = &deep_env;
     current_env->sp_end = stack->sp_end;
     current_env->sp = stack->sp;
-    current_env->global_vars = (uint32_t *) deep_malloc(sizeof(uint32_t) * 100);
+    current_env->global_vars = (uint64_t *) deep_malloc(sizeof(uint64_t) * GLOBAL_VAR_COUNT);
     current_env->memory = init_memory(1);
     current_env->control_stack = control_stack;
     current_env->jump_depth = 0;
-    int32_t ans = call_main(current_env, module);
+    int64_t ans = call_main(current_env, module);
 
-    printf("%d\n", ans);
+    printf("%lld\n", ans);
     fflush(stdout);
 
     /* release memory */

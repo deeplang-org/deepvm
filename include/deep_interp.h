@@ -21,16 +21,16 @@ typedef enum DEEPFrameType {
 typedef struct DEEPInterpFrame {
     struct DEEPInterpFrame *prev_func_frame; //指向前一个函数帧
     struct DEEPFunction *function; //当前函数实例
-    uint32_t *sp; //操作数栈指针
+    uint64_t *sp; //操作数栈指针
     DEEPFrameType type; //类型
-    uint32_t *local_vars; //局部变量
+    uint64_t *local_vars; //局部变量
 } DEEPInterpFrame;
 
 //操作数栈
 typedef struct DEEPStack {
     int32_t capacity;
-    uint32_t *sp;
-    uint32_t *sp_end;
+    uint64_t *sp;
+    uint64_t *sp_end;
 } DEEPStack;
 
 //控制栈
@@ -43,10 +43,10 @@ typedef struct DEEPControlStack {
 typedef struct DEEPExecEnv {
 
     struct DEEPInterpFrame *cur_frame; //当前函数帧
-    uint32_t *sp_end; //操作数栈大小
-    uint32_t *sp; //sp指针
-    uint32_t *local_vars; //函数局部变量
-    uint32_t *global_vars; //全局变量
+    uint64_t *sp_end; //操作数栈大小
+    uint64_t *sp; //sp指针
+    uint64_t *local_vars; //函数局部变量
+    uint64_t *global_vars; //全局变量
     uint8_t *memory; //内存
     DEEPControlStack *control_stack; //控制栈
     int jump_depth; //为0时表示不需要跳出函数或结构体；为x表示要跳出x层；
@@ -69,7 +69,7 @@ void control_stack_free(DEEPControlStack *stack);
 //读结构体
 void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset);
 
-int32_t call_main(DEEPExecEnv *current_env, DEEPModule *module);
+int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module);
 
 void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index);
 

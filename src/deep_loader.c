@@ -247,7 +247,7 @@ static void decode_export_section(const uint8_t* p, DEEPModule* module) {
     for (uint32_t i = 0; i < export_count; i ++) {
         Export = module->export_section[i] = (DEEPExport*)deep_malloc(sizeof(DEEPExport));
         name_len = read_leb_u32((uint8_t**)&p);
-        Export->name = str_gen(p, name_len);
+        Export->name = str_gen((char *)p, name_len);
         p += name_len;
         Export->tag = READ_BYTE(p);
         Export->index = read_leb_u32((uint8_t**)&p);
@@ -272,11 +272,11 @@ static void decode_import_section(const uint8_t* p, DEEPModule* module)
         Import = module->import_section[i] = (DEEPImport *)deep_malloc(sizeof(DEEPImport));
         /* read import module name */
         module_name_len = read_leb_u32((uint8_t**)&p);
-        Import->module_name = str_gen(p, module_name_len);
+        Import->module_name = str_gen((char *)p, module_name_len);
         p += module_name_len;
         /* read member name */
         member_name_len = read_leb_u32((uint8_t**)&p);
-        Import->member_name = str_gen(p, member_name_len);
+        Import->member_name = str_gen((char *)p, member_name_len);
         p += member_name_len;
         /* read tag(type of this record) and index */
         Import->tag = READ_BYTE(p);
