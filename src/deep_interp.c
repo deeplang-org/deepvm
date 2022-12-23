@@ -488,14 +488,14 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             case op_local_get: {
                 ip++;
                 uint32_t index = read_leb_u32(&ip);//local_get指令的立即数
-                uint32_t a = current_env->local_vars[index];
-                pushU32(a);
+                uint64_t a = current_env->local_vars[index];
+                pushU64(a);
                 break;
             }
             case op_local_set: {
                 ip++;
                 uint32_t index = read_leb_u32(&ip);//local_set指令的立即数
-                current_env->local_vars[index] = popU32();
+                current_env->local_vars[index] = popU64();
                 break;
             }
             case op_local_tee: {
@@ -507,14 +507,14 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             case op_global_get: {
                 ip++;
                 uint32_t index = read_leb_u32(&ip);//global_get指令的立即数
-                uint32_t a = current_env->global_vars[index];
-                pushU32(a);
+                uint64_t a = current_env->global_vars[index];
+                pushU64(a);
                 break;
             }
             case op_global_set: {
                 ip++;
                 uint32_t index = read_leb_u32(&ip);//global_set指令的立即数
-                current_env->global_vars[index] = popU32();
+                current_env->global_vars[index] = popU64();
                 break;
             }
             /* 比较指令 */
@@ -988,7 +988,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     current_env->local_vars = frame->local_vars;
     uint32_t vars_temp = func->local_vars_count;
     while (vars_temp > 0) {
-        uint32_t temp = *(--current_env->sp);
+        uint64_t temp = *(--current_env->sp);
         current_env->local_vars[(vars_temp--) - 1] = temp;
     }
 

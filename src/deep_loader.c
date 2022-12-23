@@ -63,7 +63,7 @@ int32_t read_leb_i32(uint8_t** p) {
 uint64_t read_leb_u64(uint8_t** p) {
     uint8_t* buf = *p;
     uint64_t res = 0;
-    for (int32_t i = 0; i < 5; i++) {
+    for (int64_t i = 0; i < 10; i++) {
         res |= (buf[i] & 0x7f) << (i * 7);
         if ((buf[i] & 0x80) == 0) {
             *p += i + 1;
