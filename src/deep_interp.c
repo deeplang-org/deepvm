@@ -204,6 +204,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i32_leu:
         case i64_eq:
         case i64_eqz:
+        case i64_ne:
         case i64_ges:
         case i64_geu:
         case i64_gts:
@@ -226,17 +227,6 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i32_trunc_f32_s:
         case i32_trunc_f32_u:
         case i32_xor:
-        case i64_eqz:
-        case i64_eq:
-        case i64_ne:
-        case i64_lts:
-        case i64_ltu:
-        case i64_gts:
-        case i64_gtu:
-        case i64_les:
-        case i64_leu:
-        case i64_ges:
-        case i64_geu:
         case f32_eq:
         case f32_ne:
         case f32_lt:
