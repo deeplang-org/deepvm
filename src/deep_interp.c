@@ -861,11 +861,25 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushS32(MODULUS(int32_t, b, a));
                 break;
             }
+            case i64_rems: {
+                ip++;
+                int64_t a = popS64();
+                int64_t b = popS64();
+                pushS64(MODULUS(int64_t, b, a));
+                break;
+            }
             case i32_remu: {
                 ip++;
                 uint32_t a = popU32();
                 uint32_t b = popU32();
                 pushU32(MODULUS(uint32_t, b, a));
+                break;
+            }
+            case i64_remu: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU64(MODULUS(uint64_t, b, a));
                 break;
             }
             case i32_const: {
@@ -887,11 +901,25 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushU32(b & a);
                 break;
             }
+            case i64_and: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU64(b & a);
+                break;
+            }
             case i32_or: {
                 ip++;
                 uint32_t a = popU32();
                 uint32_t b = popU32();
                 pushU32(b | a);
+                break;
+            }
+            case i64_or: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU64(b | a);
                 break;
             }
             case i32_xor: {
@@ -901,6 +929,13 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushU32(b ^ a);
                 break;
             }
+            case i64_xor: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU64(b ^ a);
+                break;
+            }
             case i32_shl: {
                 ip++;
                 uint32_t a = popU32();
@@ -908,12 +943,39 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushU32(b << (a % 32));
                 break;
             }
-            case i32_shrs:
+            case i64_shl: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU64(b << (a % 64));
+                break;
+            }
+            case i32_shrs: {
+                ip++;
+                int32_t a = popS32();
+                int32_t b = popS32();
+                pushS32(b < 0 ? b >> a | ~(~0U >> a) : b >> a);
+                break;
+            }
+            case i64_shrs: {
+                ip++;
+                int64_t a = popS64();
+                int64_t b = popS64();
+                pushS64(b < 0 ? b >> a | ~(~0U >> a) : b >> a);
+                break;
+            }
             case i32_shru: {
                 ip++;
                 uint32_t a = popU32();
                 uint32_t b = popU32();
-                pushU32(b >> (a % 32));
+                pushU32(b >> a);
+                break;
+            }
+            case i64_shru: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                pushU64(b >> a);
                 break;
             }
             case f32_add: {
