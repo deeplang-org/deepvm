@@ -38,8 +38,12 @@
 // 安全除法
 #define DIVIDE(TYPE, DIVIDEND, DIVISOR) \
 (((TYPE)DIVISOR == 0) && \
-    (deep_error("Arithmetic Error: Divide by Zero!"), exit(1), 0), \
+    (deep_error("Arithmetic Error: Division by Zero!"), exit(1), 0), \
         (TYPE)DIVIDEND / (TYPE)DIVISOR)
+#define MODULUS(TYPE, DIVIDEND, DIVISOR) \
+(((TYPE)DIVISOR == 0) && \
+    (deep_error("Arithmetic Error: Remainder by Zero!"), exit(1), 0), \
+        (TYPE)DIVIDEND % (TYPE)DIVISOR)
 
 typedef void *(*fun_ptr_t)(void *);
 
@@ -850,6 +854,20 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushU64(DIVIDE(uint64_t, b, a));
                 break;
             }
+            case i32_rems: {
+                ip++;
+                int32_t a = popS32();
+                int32_t b = popS32();
+                pushS32(MODULUS(int32_t, b, a));
+                break;
+            }
+            case i32_remu: {
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                pushU32(MODULUS(uint32_t, b, a));
+                break;
+            }
             case i32_const: {
                 ip++;
                 uint32_t temp = read_leb_i32(&ip);
@@ -860,20 +878,6 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 uint64_t temp = read_leb_i64(&ip);
                 pushU64(temp);
-                break;
-            }
-            case i32_rems: {
-                ip++;
-                int32_t a = popS32();
-                int32_t b = popS32();
-                pushS32(b % a);
-                break;
-            }
-            case i32_remu: {
-                ip++;
-                uint32_t a = popU32();
-                uint32_t b = popU32();
-                pushU32(b % a);
                 break;
             }
             case i32_and: {
