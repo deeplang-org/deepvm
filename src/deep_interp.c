@@ -195,6 +195,10 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i64_and:
         case i32_clz:
         case i32_ctz:
+        case i32_popcnt:
+        case i64_clz:
+        case i64_ctz:
+        case i64_popcnt:
         case i32_divs:
         case i64_divs:
         case i32_divu:
@@ -225,7 +229,6 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i64_mul:
         case i32_or:
         case i64_or:
-        case i32_popcnt:
         case i32_rems:
         case i64_rems:
         case i32_remu:
@@ -1038,6 +1041,67 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 double temp = read_ieee_64(&ip);
                 pushF64(temp);
                 break;
+            }
+            // 一元操作
+            case i32_clz: {
+                ip++;
+                int32_t a = popS32();
+                // 需要确保调用的builtin处理的是32位
+                #if __SIZEOF_INT__ == 4
+                pushS32(__builtin_clz(a));
+                #else
+                pushS32(__builtin_clzl(a));
+                #endif
+            }
+            case i32_ctz: {
+                ip++;
+                int32_t a = popS32();
+                // 需要确保调用的builtin处理的是32位
+                #if __SIZEOF_INT__ == 4
+                pushS32(__builtin_ctz(a));
+                #else
+                pushS32(__builtin_ctzl(a));
+                #endif
+            }
+            case i32_popcnt: {
+                ip++;
+                int32_t a = popS32();
+                // 需要确保调用的builtin处理的是32位
+                #if __SIZEOF_INT__ == 4
+                pushS32(__builtin_popcount(a));
+                #else
+                pushS32(__builtin_popcountl(a));
+                #endif
+            }
+            case i64_clz: {
+                ip++;
+                int32_t a = popS32();
+                // 需要确保调用的builtin处理的是64位
+                #if __SIZEOF_LONG__ == 8
+                pushS32(__builtin_clzl(a));
+                #else
+                pushS32(__builtin_clzll(a));
+                #endif
+            }
+            case i64_ctz: {
+                ip++;
+                int32_t a = popS32();
+                // 需要确保调用的builtin处理的是64位
+                #if __SIZEOF_LONG__ == 8
+                pushS32(__builtin_ctzl(a));
+                #else
+                pushS32(__builtin_ctzll(a));
+                #endif
+            }
+            case i64_popcnt: {
+                ip++;
+                int32_t a = popS32();
+                // 需要确保调用的builtin处理的是64位
+                #if __SIZEOF_LONG__ == 8
+                pushS32(__builtin_popcountl(a));
+                #else
+                pushS32(__builtin_popcountll(a));
+                #endif
             }
             // 类型转换
             case i32_trunc_f32_s: {
