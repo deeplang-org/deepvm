@@ -256,21 +256,28 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case f32_le:
         case f32_ge:
         case f32_abs:
+        case f64_abs:
         case f32_add:
         case f32_ceil:
+        case f64_ceil:
         case f32_convert_i32_s:
         case f32_convert_i32_u:
         case f32_copysign:
         case f32_div:
         case f32_floor:
+        case f64_floor:
         case f32_max:
         case f32_min:
         case f32_mul:
         case f32_nearest:
+        case f64_nearest:
         case f32_neg:
+        case f64_neg:
         case f32_sqrt:
+        case f64_sqrt:
         case f32_sub:
         case f32_trunc:
+        case f64_trunc:
         case f64_eq:
         case f64_ne:
         case f64_lt:
@@ -1030,6 +1037,55 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushF32(copysignf(b, a));
                 break;
             }
+            case f64_add: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushF64(b + a);
+                break;
+            }
+            case f64_sub: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushF64(b - a);
+                break;
+            }
+            case f64_mul: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushF64(b * a);
+                break;
+            }
+            case f64_div: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushF64(DIVIDE(double, b, a));
+                break;
+            }
+            case f64_min: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushF64(b < a ? b : a);
+                break;
+            }
+            case f64_max: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushF64(b > a ? b : a);
+                break;
+            }
+            case f64_copysign: {
+                ip++;
+                double a = popF64();
+                double b = popF64();
+                pushF64(copysign(b, a));
+                break;
+            }
             case f32_const: {
                 ip++;
                 float temp = read_ieee_32(&ip);
@@ -1140,37 +1196,37 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             }
             case f64_abs: {
                 ip++;
-                float a = popF64();
+                double a = popF64();
                 pushF64(fabs(a));
             }
             case f64_neg: {
                 ip++;
-                float a = popF64();
+                double a = popF64();
                 pushF64(-a);
             }
             case f64_ceil: {
                 ip++;
-                float a = popF64();
+                double a = popF64();
                 pushF64(ceil(a));
             }
             case f64_floor: {
                 ip++;
-                float a = popF64();
+                double a = popF64();
                 pushF64(floor(a));
             }
             case f64_trunc: {
                 ip++;
-                float a = popF64();
+                double a = popF64();
                 pushF64(trunc(a));
             }
             case f64_nearest: {
                 ip++;
-                float a = popF64();
+                double a = popF64();
                 pushF64(round(a));
             }
             case f64_sqrt: {
                 ip++;
-                float a = popF64();
+                double a = popF64();
                 pushF64(sqrt(a));
             }
             // 类型转换

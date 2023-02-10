@@ -79,6 +79,13 @@ enum DEEPOpcode {
     f32_min = 0x96,
     f32_max = 0x97,
     f32_copysign = 0x98,
+    f64_add = 0xA0,
+    f64_sub = 0xA1,
+    f64_mul = 0xA2,
+    f64_div = 0xA3,
+    f64_min = 0xA4,
+    f64_max = 0xA5,
+    f64_copysign = 0xA6,
     //一元算数指令
     i32_clz = 0x67,
     i32_ctz = 0x68,
