@@ -93,6 +93,13 @@ enum DEEPOpcode {
     f32_trunc = 0x8F,
     f32_nearest = 0x90,
     f32_sqrt = 0x91,
+    f64_abs = 0x99,
+    f64_neg = 0x9A,
+    f64_ceil = 0x9B,
+    f64_floor = 0x9C,
+    f64_trunc = 0x9D,
+    f64_nearest = 0x9E,
+    f64_sqrt = 0x9F,
     //比较指令
     i32_eqz = 0x45,
     i32_eq = 0x46,
