@@ -247,6 +247,12 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i64_sub:
         case i32_trunc_f32_s:
         case i32_trunc_f32_u:
+        case i32_trunc_f64_s:
+        case i32_trunc_f64_u:
+        case i64_trunc_f32_s:
+        case i64_trunc_f32_u:
+        case i64_trunc_f64_s:
+        case i64_trunc_f64_u:
         case i32_xor:
         case i64_xor:
         case f32_eq:
@@ -262,6 +268,16 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case f64_ceil:
         case f32_convert_i32_s:
         case f32_convert_i32_u:
+        case f32_convert_i64_s:
+        case f32_convert_i64_u:
+        case f64_convert_i32_s:
+        case f64_convert_i32_u:
+        case f64_convert_i64_s:
+        case f64_convert_i64_u:
+        case i32_reinterpret_f32:
+        case i64_reinterpret_f64:
+        case f32_reinterpret_i32:
+        case f64_reinterpret_i64:
         case f32_copysign:
         case f32_div:
         case f32_floor:
@@ -284,6 +300,11 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case f64_gt:
         case f64_le:
         case f64_ge:
+        case i32_wrap_i64:
+        case i64_extend_i32_s:
+        case i64_extend_i32_u:
+        case f32_demote_f64:
+        case f64_promote_f32:
         case op_drop:
         case op_select:
             ip++;
@@ -1230,6 +1251,10 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushF64(sqrt(a));
             }
             // 类型转换
+            case i32_wrap_i64: {
+                int32_t temp = (int64_t)popS64();
+                pushS32(temp);
+            }
             case i32_trunc_f32_s: {
                 ip++;
                 int32_t temp = (int32_t)popF32();
@@ -1242,6 +1267,50 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushU32(temp);
                 break;
             }
+            case i32_trunc_f64_s: {
+                ip++;
+                int32_t temp = (int32_t)popF64();
+                pushS32(temp);
+                break;
+            }
+            case i32_trunc_f64_u: {
+                ip++;
+                uint32_t temp = (uint32_t)popF64();
+                pushU32(temp);
+                break;
+            }
+            case i64_extend_i32_s: {
+                int64_t temp = (int64_t)popS32();
+                pushS64(temp);
+            }
+            case i64_extend_i32_u: {
+                uint64_t temp = (uint64_t)popU32();
+                pushU64(temp);
+            }
+            case i64_trunc_f32_s: {
+                ip++;
+                int64_t temp = (int64_t)popF32();
+                pushS64(temp);
+                break;
+            }
+            case i64_trunc_f32_u: {
+                ip++;
+                uint64_t temp = (uint64_t)popF32();
+                pushU64(temp);
+                break;
+            }
+            case i64_trunc_f64_s: {
+                ip++;
+                int64_t temp = (int64_t)popF64();
+                pushS64(temp);
+                break;
+            }
+            case i64_trunc_f64_u: {
+                ip++;
+                uint64_t temp = (uint64_t)popF64();
+                pushU64(temp);
+                break;
+            }
             case f32_convert_i32_s: {
                 ip++;
                 float temp = (float)popS32();
@@ -1252,6 +1321,62 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 float temp = (float)popU32();
                 pushF32(temp);
+                break;
+            }
+            case f32_convert_i64_s: {
+                ip++;
+                float temp = (float)popS64();
+                pushF32(temp);
+                break;
+            }
+            case f32_convert_i64_u: {
+                ip++;
+                float temp = (float)popU64();
+                pushF32(temp);
+                break;
+            }
+            case f32_demote_f64: {
+                ip++;
+                float temp = (float)popF64();
+                pushF32(temp);
+                break;
+            }
+            case f64_convert_i32_s: {
+                ip++;
+                double temp = (double)popS32();
+                pushF64(temp);
+                break;
+            }
+            case f64_convert_i32_u: {
+                ip++;
+                double temp = (double)popU32();
+                pushF64(temp);
+                break;
+            }
+            case f64_convert_i64_s: {
+                ip++;
+                double temp = (double)popS64();
+                pushF64(temp);
+                break;
+            }
+            case f64_convert_i64_u: {
+                ip++;
+                double temp = (double)popU64();
+                pushF64(temp);
+                break;
+            }
+            case f64_promote_f32: {
+                ip++;
+                double temp = (double)popF32();
+                pushF64(temp);
+                break;
+            }
+            // Reinterpret不会改变实际存储方式，因此实际上不需要操作
+            case i32_reinterpret_f32:
+            case i64_reinterpret_f64:
+            case f32_reinterpret_i32:
+            case f64_reinterpret_i64: {
+                ip++;
                 break;
             }
             default:
