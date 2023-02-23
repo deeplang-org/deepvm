@@ -1418,10 +1418,10 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     frame->local_vars = (uint64_t *)deep_malloc(sizeof(uint64_t) * func->local_vars_count);
     //局部变量的空间已经在函数帧中分配好
     current_env->local_vars = frame->local_vars;
-    uint32_t vars_temp = func->local_vars_count;
-    while (vars_temp > 0) {
+    uint32_t param_count = func->func_type->param_count;
+    while (param_count > 0) {
         uint64_t temp = *(--current_env->sp);
-        current_env->local_vars[(vars_temp--) - 1] = temp;
+        current_env->local_vars[(param_count--) - 1] = temp;
     }
 
     //更新env中内容

@@ -164,17 +164,17 @@ static section_listnode* create_section_list(const uint8_t** p, int32_t size) {
 static void decode_type_section(const uint8_t* p, DEEPModule* module) {
 
     const uint8_t* p_tmp;
-    uint32_t         total_size = 0;
-    uint32_t         type_count = 0, param_count = 0, ret_count = 0;
+    uint32_t total_size = 0;
+    uint32_t type_count = 0, param_count = 0, ret_count = 0;
     module->type_count = type_count = read_leb_u32((uint8_t**)&p);
     module->type_section = (DEEPType**)deep_malloc(type_count * sizeof(DEEPType*));
     for (int32_t i = 0; i < type_count; i++) {
         if (READ_BYTE(p) == 0x60) {
             param_count = read_leb_u32((uint8_t**)&p);
-            p_tmp     = p;
+            p_tmp = p;
             p += param_count;
             ret_count = read_leb_u32((uint8_t**)&p);
-            p          = p_tmp;
+            p = p_tmp;
             total_size = 8 + param_count + ret_count;
 
             module->type_section[i] = (DEEPType*)deep_malloc(sizeof(DEEPType));
@@ -229,6 +229,7 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
             memset(func, 0, sizeof(DEEPFunction));
             func->is_import = true;
             func->func_type = module->type_section[import->index];
+            func->local_vars_count = func->func_type->param_count;
             import_func_index++;
         }
     }
