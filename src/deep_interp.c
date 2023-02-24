@@ -399,7 +399,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 }
                 //block的局部变量和当前function的一致
                 block->local_var_types = current_env->cur_frame->function->local_var_types;
-                block->local_vars_count = current_env->cur_frame->function->local_vars_count;
+                block->local_var_count = current_env->cur_frame->function->local_var_count;
                 block->code_begin = start;
                 block->code_size = offset;
                 block->func_type = type;
@@ -440,7 +440,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 }
                 //block的局部变量和当前function的一致
                 block->local_var_types = current_env->cur_frame->function->local_var_types;
-                block->local_vars_count = current_env->cur_frame->function->local_vars_count;
+                block->local_var_count = current_env->cur_frame->function->local_var_count;
                 //执行block
                 block->func_type = type;
                 current_env->sp = sp;
@@ -1415,7 +1415,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     frame->function = func;
     frame->prev_func_frame = current_env->cur_frame;
     frame->type = FUNCTION_FRAME;
-    frame->local_vars = (uint64_t *)deep_malloc(sizeof(uint64_t) * func->local_vars_count);
+    frame->local_vars = (uint64_t *)deep_malloc(sizeof(uint64_t) * func->local_var_count);
     //局部变量的空间已经在函数帧中分配好
     current_env->local_vars = frame->local_vars;
     uint32_t param_count = func->func_type->param_count;
@@ -1503,7 +1503,7 @@ int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     main_frame->sp = current_env->sp;
     main_frame->function = main_func;
     main_frame->type = FUNCTION_FRAME;
-    main_frame->local_vars = (uint64_t *)deep_malloc(sizeof(uint64_t) * main_func->local_vars_count);
+    main_frame->local_vars = (uint64_t *)deep_malloc(sizeof(uint64_t) * main_func->local_var_count);
     //局部变量的空间已经在函数帧中分配好
     current_env->local_vars = main_frame->local_vars;
 
