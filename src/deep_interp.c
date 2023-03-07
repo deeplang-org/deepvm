@@ -164,7 +164,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t)*ip;
-        // printf("%x\n", opcode);
+        deep_debug("BLOCK: %x\n", opcode);
         switch (opcode)
         {
         case op_end:
@@ -361,7 +361,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
-        // printf("op: %x\n", opcode);
+        deep_debug("OP: %x\n", opcode);
         switch (opcode) {
             /* 控制指令 */
             case op_unreachable: {
@@ -542,7 +542,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 uint32_t index = read_leb_u32(&ip); //local_get指令的立即数
                 uint32_t *offsets = current_env->cur_frame->function->local_var_offsets;
                 memcpy(sp, current_env->local_vars + offsets[index], offsets[index + 1] - offsets[index]);
-                // printf("GET: %u\n", *(uint32_t *)sp);
+                deep_debug("GET: %u\n", *(uint32_t *)sp);
                 sp += offsets[index + 1] - offsets[index];
                 break;
             }
