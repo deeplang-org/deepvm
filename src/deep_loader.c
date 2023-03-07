@@ -4,6 +4,7 @@
  * Date:4/10/2021
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -267,13 +268,13 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
             func->is_import = true;
             func->func_type = module->type_section[import->index];
             func->local_var_count = func->func_type->param_count;
-            func->local_var_offsets = (uint32_t *)deep_malloc(sizeof(uint32_t) * func->local_var_count);
+
+            func->local_var_offsets = (uint32_t *)deep_malloc(sizeof(uint32_t) * (func->local_var_count + 1));
             u_int32_t offset = 0;
             for (uint32_t j = 0; j < func->local_var_count; j++) {
                 func->local_var_offsets[j] = offset;
-                offset += wasm_type_size(func->func_type->type[j]);
             }
-            func->local_var_length = offset;
+            func->local_var_offsets[func->local_var_count] = offset;
             import_func_index++;
         }
     }
@@ -306,21 +307,24 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
                 func->local_var_types[j].local_type = READ_BYTE(p_code);
             }
         }
+
         func->code_begin = (uint8_t*)p_code;
         func->local_var_count = local_var_count;
         func->code_size = code_size - (uint32_t)(p_code - p_code_temp);
         p_code = p_code_temp + code_size;
 
-        func->local_var_offsets = (uint32_t *)deep_malloc(sizeof(uint32_t) * func->local_var_count);
+        func->local_var_offsets = (uint32_t *)deep_malloc(sizeof(uint32_t) * (func->local_var_count + 1));
         u_int32_t offset = 0;
         uint32_t j = 0;
         for (uint32_t k = 0; k < local_set_count; k++) {
             for (uint32_t c = 0; c < func->local_var_types[k].count; c++) {
                 func->local_var_offsets[j] = offset;
                 offset += wasm_type_size(func->local_var_types[k].local_type);
+                j += 1;
             }
         }
-        func->local_var_length = offset;
+        assert(j == func->local_var_count);
+        func->local_var_offsets[j] = offset;
         import_func_index++;
     }
 }
