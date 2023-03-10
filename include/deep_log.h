@@ -38,7 +38,11 @@ void log_printf (const char* pFileName, unsigned int uiLine, const char* pFuncNa
 void log_data(const char *pFileName, unsigned int uiLine, const char* pFuncName, const char *pcStr,unsigned char *pucBuf,unsigned int usLen);
 #define deep_error(...)                             log_printf(__FILE__, __LINE__,__FUNCTION__,"<error>",__VA_ARGS__)
 #define deep_warn(...)                              log_printf(__FILE__, __LINE__,__FUNCTION__,"<warn>",__VA_ARGS__)
+#ifdef DEBUG
 #define deep_debug(...)                             log_printf(__FILE__, __LINE__,__FUNCTION__,"<debug>",__VA_ARGS__)
+#else
+#define deep_debug(...)                             
+#endif
 #define deep_info(...)                              log_printf(__FILE__, __LINE__,__FUNCTION__,"<info>",__VA_ARGS__)
 #define deep_dump(pcStr,pucBuf,usLen)               log_data(__FILE__, __LINE__,__FUNCTION__,pcStr,pucBuf,usLen)
 

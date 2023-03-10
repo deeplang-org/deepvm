@@ -77,7 +77,8 @@ typedef struct DEEPFunction
     LocalVarCluster *local_var_types; // Local variables' type informations
     uint32_t code_size;
     uint8_t *code_begin;
-    uint8_t local_vars_count;
+    uint8_t local_var_count; // Including function parameters
+    uint32_t *local_var_offsets;
     bool is_import;
 } DEEPFunction;
 
@@ -166,6 +167,7 @@ int64_t read_leb_i64(uint8_t** p);
 float read_ieee_32(uint8_t **p);
 double read_ieee_64(uint8_t **p);
 
+uint8_t wasm_type_size(uint8_t type);
 uint8_t* init_memory(uint32_t min_page);
 uint8_t read_mem8(uint8_t* mem, uint32_t offset);
 uint16_t read_mem16(uint8_t* mem, uint32_t offset);

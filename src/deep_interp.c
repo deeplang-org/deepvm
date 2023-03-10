@@ -13,26 +13,26 @@
 #include "deep_mem.h"
 #include "deep_opcode.h"
 
-#define popS32() (*(int32_t *)(--sp))
-#define popF32() (*(float *)(--sp))
-#define popU32() (*(uint32_t *)(--sp))
-#define pushS32(x) *(sp) = (int32_t)(x);sp++
-#define pushF32(x) do {float __x = (float)x;*(sp) = *(int32_t *)(&__x);sp++;} while (0)
-#define pushU32(x) *(sp) = (uint32_t)(x);sp++
+#define popS32() (sp -= 4, *(int32_t *)sp)
+#define popF32() (sp -= 4, *(float *)sp)
+#define popU32() (sp -= 4, *(uint32_t *)sp)
+#define pushS32(x) do {int32_t __x = x;memcpy(sp, &__x, 4);sp += 4;} while (0)
+#define pushF32(x) do {float __x = (float)x;memcpy(sp, &__x, 4);sp += 4;} while (0)
+#define pushU32(x) do {uint32_t __x = x;memcpy(sp, &__x, 4);sp += 4;} while (0)
 
-#define popS64() (*(int64_t *)(--sp))
-#define popF64() (*(double *)(--sp))
-#define popU64() (*(uint64_t *)(--sp))
-#define pushS64(x) *(sp) = (int64_t)(x);sp++
-#define pushF64(x) do {double __x = (double)x;*(sp) = *(int64_t *)(&__x);sp++;} while (0)
-#define pushU64(x) *(sp) = (uint64_t)(x);sp++
+#define popS64() (sp -= 8, *(int64_t *)sp)
+#define popF64() (sp -= 8, *(double *)sp)
+#define popU64() (sp -= 8, *(uint64_t *)sp)
+#define pushS64(x) do {int64_t __x = x;memcpy(sp, &__x, 8);sp += 8;} while (0)
+#define pushF64(x) do {double __x = (double)x;memcpy(sp, &__x, 8);sp += 8;} while (0)
+#define pushU64(x) do {uint64_t __x = x;memcpy(sp, &__x, 8);sp += 8;} while (0)
 
 #define READ_VALUE(Type, p) \
     (p += sizeof(Type), *(Type*)(p - sizeof(Type)))
 #define READ_UINT32(p)  READ_VALUE(uint32_t, p)
 #define READ_BYTE(p) READ_VALUE(uint8_t, p)
 
-#define STACK_CAPACITY 100
+#define STACK_CAPACITY 800
 #define CONTROL_STACK_CAPACITY 100
 
 // 安全除法
@@ -55,7 +55,7 @@ typedef struct {
 } DEEPNative;
 
 static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
-    uint64_t *sp = env->cur_frame->sp;
+    uint8_t *sp = env->cur_frame->sp;
     uint32_t offset = popU32();
     DEEPData *data;
     bool data_found = false;
@@ -78,13 +78,13 @@ static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
 }
 
 static void native_puti(DEEPExecEnv *env, DEEPModule *module) {
-    uint64_t *sp = env->cur_frame->sp;
+    uint8_t *sp = env->cur_frame->sp;
     printf("%d", popS32());
     pushS32(0);
 }
 
 static void native_putf(DEEPExecEnv *env, DEEPModule *module) {
-    uint64_t *sp = env->cur_frame->sp;
+    uint8_t *sp = env->cur_frame->sp;
     printf("%f", popF32());
     pushS32(0);
 }
@@ -116,7 +116,7 @@ DEEPStack *stack_cons(void) {
         return NULL;
     }
     stack->capacity = STACK_CAPACITY;
-    stack->sp = (uint64_t *) deep_malloc(sizeof(uint64_t) * STACK_CAPACITY);
+    stack->sp = (uint8_t *) deep_malloc(STACK_CAPACITY);
     if (stack->sp == NULL) {
         deep_error("Malloc area for stack error!");
     }
@@ -164,7 +164,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t)*ip;
-        // printf("%x\n", opcode);
+        deep_debug("BLOCK: %x\n", opcode);
         switch (opcode)
         {
         case op_end:
@@ -346,7 +346,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
 
 //执行代码块指令，true表示正常结束，false表示碰到br语句而跳出。
 bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
-    uint64_t *sp = current_env->cur_frame->sp;
+    uint8_t *sp = current_env->cur_frame->sp;
     uint8_t *ip = current_env->cur_frame->function->code_begin;
     uint8_t *ip_end = ip + current_env->cur_frame->function->code_size;
     uint8_t *memory = current_env->memory;
@@ -361,7 +361,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
         //提取指令码
         //立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
-        // printf("op: %x\n", opcode);
+        deep_debug("OP: %x\n", opcode);
         switch (opcode) {
             /* 控制指令 */
             case op_unreachable: {
@@ -399,7 +399,8 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 }
                 //block的局部变量和当前function的一致
                 block->local_var_types = current_env->cur_frame->function->local_var_types;
-                block->local_vars_count = current_env->cur_frame->function->local_vars_count;
+                block->local_var_count = current_env->cur_frame->function->local_var_count;
+                block->local_var_offsets = current_env->cur_frame->function->local_var_offsets;
                 block->code_begin = start;
                 block->code_size = offset;
                 block->func_type = type;
@@ -440,7 +441,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 }
                 //block的局部变量和当前function的一致
                 block->local_var_types = current_env->cur_frame->function->local_var_types;
-                block->local_vars_count = current_env->cur_frame->function->local_vars_count;
+                block->local_var_count = current_env->cur_frame->function->local_var_count;
                 //执行block
                 block->func_type = type;
                 current_env->sp = sp;
@@ -538,33 +539,38 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             }
             case op_local_get: {
                 ip++;
-                uint32_t index = read_leb_u32(&ip);//local_get指令的立即数
-                uint64_t a = current_env->local_vars[index];
-                pushU64(a);
+                uint32_t index = read_leb_u32(&ip); //local_get指令的立即数
+                uint32_t *offsets = current_env->cur_frame->function->local_var_offsets;
+                memcpy(sp, current_env->local_vars + offsets[index], offsets[index + 1] - offsets[index]);
+                deep_debug("GET: %u\n", *(uint32_t *)sp);
+                sp += offsets[index + 1] - offsets[index];
                 break;
             }
             case op_local_set: {
                 ip++;
-                uint32_t index = read_leb_u32(&ip);//local_set指令的立即数
-                current_env->local_vars[index] = popU64();
+                uint32_t index = read_leb_u32(&ip); //local_set指令的立即数
+                uint32_t *offsets = current_env->cur_frame->function->local_var_offsets;
+                sp -= offsets[index + 1] - offsets[index];
+                memcpy(current_env->local_vars + offsets[index], sp, offsets[index + 1] - offsets[index]);
                 break;
             }
             case op_local_tee: {
                 ip++;
-                uint32_t index = read_leb_u32(&ip);//local_tee指令的立即数
-                current_env->local_vars[index] = *(sp - 1);
+                uint32_t index = read_leb_u32(&ip); //local_tee指令的立即数
+                uint32_t *offsets = current_env->cur_frame->function->local_var_offsets;
+                memcpy(current_env->local_vars + offsets[index], sp - (offsets[index + 1] - offsets[index]), offsets[index + 1] - offsets[index]);
                 break;
             }
             case op_global_get: {
                 ip++;
-                uint32_t index = read_leb_u32(&ip);//global_get指令的立即数
+                uint32_t index = read_leb_u32(&ip); //global_get指令的立即数
                 uint64_t a = current_env->global_vars[index];
                 pushU64(a);
                 break;
             }
             case op_global_set: {
                 ip++;
-                uint32_t index = read_leb_u32(&ip);//global_set指令的立即数
+                uint32_t index = read_leb_u32(&ip); //global_set指令的立即数
                 current_env->global_vars[index] = popU64();
                 break;
             }
@@ -1111,6 +1117,8 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 float temp = read_ieee_32(&ip);
                 pushF32(temp);
+                float x = popF32();
+                pushF32(x);
                 break;
             }
             case f64_const: {
@@ -1396,7 +1404,6 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
 
 //调用普通函数
 void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index) {
-
     //为func函数创建DEEPFunction
     DEEPFunction *func = module->func_section[func_index];
 
@@ -1415,14 +1422,20 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     frame->function = func;
     frame->prev_func_frame = current_env->cur_frame;
     frame->type = FUNCTION_FRAME;
-    frame->local_vars = (uint64_t *)deep_malloc(sizeof(uint64_t) * func->local_vars_count);
+    frame->local_vars = (uint8_t *)deep_malloc(func->local_var_offsets[func->local_var_count]);
     //局部变量的空间已经在函数帧中分配好
     current_env->local_vars = frame->local_vars;
-    uint32_t vars_temp = func->local_vars_count;
-    while (vars_temp > 0) {
-        uint64_t temp = *(--current_env->sp);
-        current_env->local_vars[(vars_temp--) - 1] = temp;
+
+    uint32_t param_count = func->func_type->param_count;
+    uint32_t offset = 0;
+    while (param_count > 0) {
+        param_count -= 1;
+        uint8_t type_size = wasm_type_size(func->func_type->type[param_count]);
+        current_env->sp -= type_size;
+        offset += type_size;
     }
+    memcpy(current_env->local_vars, current_env->sp, offset);
+    memcpy(current_env->local_vars, current_env->sp, offset);
 
     //更新env中内容
     current_env->cur_frame = frame;
@@ -1448,8 +1461,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
         }
 
         if (name == NULL) {
-            printf("NUM: %d\n", func_index);
-            deep_error("Cannot find built-in function!\n");
+            deep_error("Cannot find built-in function at index %d!\n", func_index);
             exit(-1);
         }
 
@@ -1469,8 +1481,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     //释放掉局部变量
     deep_free(current_env->local_vars);
     deep_free(frame);
-    current_env->local_vars = current_env->control_stack->frames[
-    current_env->control_stack->current_frame_index]->local_vars;
+    current_env->local_vars = current_env->control_stack->frames[current_env->control_stack->current_frame_index]->local_vars;
 }
 
 //为main函数创建帧，执行main函数
@@ -1503,7 +1514,7 @@ int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     main_frame->sp = current_env->sp;
     main_frame->function = main_func;
     main_frame->type = FUNCTION_FRAME;
-    main_frame->local_vars = (uint64_t *)deep_malloc(sizeof(uint64_t) * main_func->local_vars_count);
+    main_frame->local_vars = (uint8_t *)deep_malloc(main_func->local_var_offsets[main_func->local_var_count]);
     //局部变量的空间已经在函数帧中分配好
     current_env->local_vars = main_frame->local_vars;
 
@@ -1520,7 +1531,21 @@ int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     deep_free(main_frame);
 
     //返回栈顶元素
-    return *(int64_t *)(current_env->sp - 1);
+    uint8_t ret_type = current_env->cur_frame->function->func_type->type[current_env->cur_frame->function->func_type->param_count];
+    switch (ret_type)
+    {
+    case op_type_i32:
+        return *(uint32_t *)(current_env->sp - 4);
+    case op_type_i64:
+        return *(uint64_t *)(current_env->sp - 8);
+    case op_type_f32:
+        return *(float *)(current_env->sp - 4);
+    case op_type_f64:
+        return *(double *)(current_env->sp - 8);
+    default:
+        deep_error("Unrecognised return type %p\n", ret_type);
+        exit(1);
+    }
 }
 
 //进入一个block/loop, 需要提供这个block对应的DEEPFunction（我们把block也当作函数包装进去）
