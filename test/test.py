@@ -2,9 +2,7 @@ import subprocess
 import platform
 
 sys = platform.system()
-# print(sys)
 BIN_PATH = '../bin/deepvm.exe' if sys == "Windows" else '../bin/deepvm'
-# print(BIN_PATH)
 
 def test_with_path(path, expected=None, returncode=0):
     try:
