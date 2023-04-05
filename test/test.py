@@ -1,10 +1,15 @@
 import subprocess
+import platform
 
+sys = platform.system()
+# print(sys)
+BIN_PATH = '../bin/deepvm.exe' if sys == "Windows" else '../bin/deepvm'
+# print(BIN_PATH)
 
 def test_with_path(path, expected=None, returncode=0):
     try:
         actual = subprocess.check_output(
-            ['../bin/deepvm', path]).decode('utf-8').strip().replace('\r\n', '\n')
+            [BIN_PATH, path]).decode('utf-8').strip().replace('\r\n', '\n')
         if (actual == str(expected).strip().replace('\r\n', '\n')):
             print(f"PASS: {path} passed!")
         else:
