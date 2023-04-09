@@ -1527,11 +1527,14 @@ int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     //执行frame中函数
     //sp要下移，栈顶元素即为函数参数
     exec_instructions(current_env, module);
-    deep_free(main_frame->local_vars);
-    deep_free(main_frame);
 
     //返回栈顶元素
     uint8_t ret_type = current_env->cur_frame->function->func_type->type[current_env->cur_frame->function->func_type->param_count];
+
+    // 获得栈顶元素后，方可将frame彻底销毁
+    deep_free(main_frame->local_vars);
+    deep_free(main_frame);
+
     switch (ret_type)
     {
     case op_type_i32:
