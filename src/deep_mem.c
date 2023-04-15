@@ -7,7 +7,7 @@
 #include "deep_log.h"
 #include "deep_mem.h"
 
-#define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
+// #define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
 
 #ifdef REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
 #include "stdlib.h"
@@ -127,7 +127,7 @@ bool deep_mem_init (void *mem, uint32_t size)
   {
     fast_block_t block;
     block_payload_offset
-      = ((uint32_t)&block.payload - (uint32_t)&block.head);
+      =(uint32_t)((uint8_t *)&block.payload - (uint8_t *)&block.head);
   }
   PRINT_ARG("Offset: %u\n", block_payload_offset);
 
@@ -183,7 +183,7 @@ deep_malloc(uint32_t size)
 void *
 deep_malloc(uint32_t size)
 {
-  if (pool->free_memory < size)
+  if (pool->free_memory < size || size == 0)
   {
     return NULL;
   }
@@ -239,9 +239,10 @@ deep_malloc_fast_bins(block_size_t aligned_size)
   block_set_P_flag (&ret->head, P_flag);
   pool->free_memory -= payload_size;
 
-  // PRINT_ARG("Remainder start (after allocation): %p\n", pool->remainder_block_head);
-  // PRINT_ARG("Remainder end (after allocation):   %p\n", pool->remainder_block_end);
-  PRINT_ARG("Payload size (after allocation):    %u\n", payload_size);
+  PRINT_ARG("Remainder start (after fast allocation): %p\n", pool->remainder_block_head);
+  PRINT_ARG("Remainder end (after fast allocation):   %p\n", pool->remainder_block_end);
+  PRINT_ARG("Payload size (after fast allocation):    %u\n", payload_size);
+  PRINT_ARG("Free memory (after fast allocation):     %llu\n", pool->free_memory);
 
   return &ret->payload;
 }
@@ -281,10 +282,10 @@ deep_malloc_sorted_bins (block_size_t aligned_size)
   block_set_P_flag (&get_block_by_offset (ret, aligned_size)->head, true);
   pool->free_memory -= payload_size;
 
-  // PRINT_ARG("Remainder start (after allocation): %p\n", pool->remainder_block_head);
-  // PRINT_ARG("Remainder end (after allocation):   %p\n", pool->remainder_block_end);
+  PRINT_ARG("Remainder start (after allocation): %p\n", pool->remainder_block_head);
+  PRINT_ARG("Remainder end (after allocation):   %p\n", pool->remainder_block_end);
   PRINT_ARG("Payload size (after allocation):    %u\n", payload_size);
-  // PRINT_ARG("Free memory (after allocation):     %llu\n", pool->free_memory);
+  PRINT_ARG("Free memory (after allocation):     %llu\n", pool->free_memory);
 
   return &ret->payload;
 }
@@ -343,8 +344,8 @@ deep_free_fast_bins(void *ptr)
   }
   pool->fast_bins[offset].addr = block;
 
-  // PRINT_ARG("Remainder start (after free fast): %p\n", pool->remainder_block_head);
-  // PRINT_ARG("Remainder end (after free fast):   %p\n", pool->remainder_block_end);
+  PRINT_ARG("Remainder start (after free fast): %p\n", pool->remainder_block_head);
+  PRINT_ARG("Remainder end (after free fast):   %p\n", pool->remainder_block_end);
   PRINT_ARG("Payload size (after free fast):    %u\n", payload_size);
   PRINT_ARG("Free memory (after free fast):     %llu\n", pool->free_memory);
 }
@@ -397,8 +398,8 @@ deep_free_sorted_bins (void *ptr)
 
   pool->free_memory += payload_size;
 
-  // PRINT_ARG("Remainder start (after free): %p\n", pool->remainder_block_head);
-  // PRINT_ARG("Remainder end (after free):   %p\n", pool->remainder_block_end);
+  PRINT_ARG("Remainder start (after free): %p\n", pool->remainder_block_head);
+  PRINT_ARG("Remainder end (after free):   %p\n", pool->remainder_block_end);
   PRINT_ARG("Payload size (after free):    %u\n", payload_size);
   PRINT_ARG("Free memory (after free):     %llu\n", pool->free_memory);
 }

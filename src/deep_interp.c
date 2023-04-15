@@ -542,7 +542,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 uint32_t index = read_leb_u32(&ip); //local_get指令的立即数
                 uint32_t *offsets = current_env->cur_frame->function->local_var_offsets;
                 memcpy(sp, current_env->local_vars + offsets[index], offsets[index + 1] - offsets[index]);
-                deep_debug("GET: %u\n", *(uint32_t *)sp);
+                // deep_debug("GET: %u\n", *(uint32_t *)sp);
                 sp += offsets[index + 1] - offsets[index];
                 break;
             }
@@ -1422,6 +1422,7 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     frame->function = func;
     frame->prev_func_frame = current_env->cur_frame;
     frame->type = FUNCTION_FRAME;
+     deep_debug("Create frame for local vars: %u\n", func->local_var_offsets[func->local_var_count]);
     frame->local_vars = (uint8_t *)deep_malloc(func->local_var_offsets[func->local_var_count]);
     //局部变量的空间已经在函数帧中分配好
     current_env->local_vars = frame->local_vars;
@@ -1434,8 +1435,11 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
         current_env->sp -= type_size;
         offset += type_size;
     }
-    memcpy(current_env->local_vars, current_env->sp, offset);
-    memcpy(current_env->local_vars, current_env->sp, offset);
+
+    if (offset > 0) {
+        memcpy(current_env->local_vars, current_env->sp, offset);
+        memcpy(current_env->local_vars, current_env->sp, offset);
+    }
 
     //更新env中内容
     current_env->cur_frame = frame;
@@ -1443,7 +1447,6 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     current_env->control_stack->current_frame_index++;
     current_env->control_stack->frames[
     current_env->control_stack->current_frame_index] = frame;
-
     //处理外部函数
     if (func->is_import) {
         //TODO: 用DEEPHash快速找。

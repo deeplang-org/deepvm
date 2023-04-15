@@ -253,7 +253,8 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
     module->function_count = all_func_count;
     module->func_section = (DEEPFunction**)deep_malloc(all_func_count * sizeof(DEEPFunction*));
 
-    /* functions from import section */
+    /* functions from import section
+       它们只有Parameter，没有Local Variable */
     int32_t import_func_index = 0;
     DEEPImport *import = NULL;
     for(int32_t i = 0; i < module->import_count; i++) {
@@ -270,9 +271,13 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
             func->local_var_count = func->func_type->param_count;
 
             func->local_var_offsets = (uint32_t *)deep_malloc(sizeof(uint32_t) * (func->local_var_count + 1));
+            func->local_var_types = (LocalVarCluster *)deep_malloc(func->local_var_count * sizeof(LocalVarCluster));
             uint32_t offset = 0;
             for (uint32_t j = 0; j < func->local_var_count; j++) {
+                func->local_var_types[j].count = 1;
+                func->local_var_types[j].local_type = func->func_type->type[j];
                 func->local_var_offsets[j] = offset;
+                offset += wasm_type_size(func->local_var_types[j].local_type);
             }
             func->local_var_offsets[func->local_var_count] = offset;
             import_func_index++;
