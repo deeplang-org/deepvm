@@ -66,7 +66,7 @@ int32_t main(int argv, char **args) {
     current_env->jump_depth = 0;
     int64_t ans = call_main(current_env, module);
 
-    printf("%lld\n", ans);
+    printf("%ld\n", ans);
     fflush(stdout);
 
     /* release memory */
