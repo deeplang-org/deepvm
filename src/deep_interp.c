@@ -410,6 +410,10 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                         opcode == op_block ? BLOCK_FRAME : LOOP_FRAME);
                 sp = current_env->sp;
                 //释放空间
+                //如果有个返回值，需要释放返回值的类型
+                if (type->ret_count == 1) {
+                    deep_free(type->type);
+                }
                 deep_free(type);
                 deep_free(block);
                 break;
@@ -461,6 +465,10 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 }
                 sp = current_env->sp;
                 //释放空间
+                //如果有个返回值，需要释放返回值的类型
+                if (type->ret_count == 1) {
+                    deep_free(type->type);
+                }
                 deep_free(type);
                 deep_free(block);
                 break;

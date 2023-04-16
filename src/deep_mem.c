@@ -175,9 +175,6 @@ deep_mem_destroy (void)
 void *
 deep_malloc(uint32_t size)
 {
-  if (size == 16) {
-    puts("16!");
-  }
   void *result = malloc(size);
   memset(result, 0, size);
   return result;
