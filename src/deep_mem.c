@@ -698,3 +698,6 @@ static void _remove_sorted_block_from_skiplist (sorted_block_t *block)
   /* no other cases, as if it is the first node, it should be the only node. */
 }
 
+uint64_t deep_get_free_memory(void) {
+  return pool->free_memory;
+}

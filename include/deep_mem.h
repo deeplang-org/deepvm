@@ -93,4 +93,7 @@ void *deep_realloc (void *ptr, uint32_t size);
 void deep_free (void *ptr);
 bool deep_mem_migrate (void *new_mem, uint32_t size);
 
+// For debugging; get the free memory in the pool
+uint64_t deep_get_free_memory(void);
+
 #endif /* _DEEP_MEM_ALLOC_H */
