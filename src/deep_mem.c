@@ -7,7 +7,7 @@
 #include "deep_log.h"
 #include "deep_mem.h"
 
-// #define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
+#define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
 
 #ifdef REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
 #include "stdlib.h"
@@ -175,6 +175,9 @@ deep_mem_destroy (void)
 void *
 deep_malloc(uint32_t size)
 {
+  if (size == 16) {
+    puts("16!");
+  }
   void *result = malloc(size);
   memset(result, 0, size);
   return result;

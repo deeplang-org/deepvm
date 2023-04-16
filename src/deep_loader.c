@@ -480,7 +480,6 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
             break;
         case SECTION_TYPE_DATA:
             decode_data_section(buf, module);
-
             break;
         default:
 
