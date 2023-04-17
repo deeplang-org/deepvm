@@ -1,7 +1,16 @@
+import platform
 import subprocess
 
 
 def test_with_path(path, expected=None, returncode=0):
+    # # Check memory leak using "leaks" on Apple Chip
+    # if (platform.system() == 'Darwin' and platform.processor() == 'arm'):
+    #     try:
+    #         subprocess.check_call(
+    #             ['leaks', '--atExit', '--', '../bin/deepvm', path], stdout=subprocess.DEVNULL)
+    #     except subprocess.CalledProcessError as e:
+    #         print(f"FAIL: {path} failed memory leak test!")
+
     try:
         actual = subprocess.check_output(
             ['../bin/deepvm', path]).decode('utf-8').strip().replace('\r\n', '\n')
