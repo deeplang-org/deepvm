@@ -128,8 +128,8 @@ int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module);
 // 调用一个函数
 void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index);
 
-// 进入一个帧, 需要提供这个帧对应的DEEPFunction（我们把block也当作函数包装进去）
-// 依次执行其中的指令，返回执行结束时的指令地址
+// 进入一个block/loop, 需要提供这个block对应的DEEPFunction（我们把block也当作函数包装进去）
+// 返回执行结束时的指令地址
 uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction *block, DEEPFrameType frame_type);
 
 #endif /* _DEEP_INTERP_H */
