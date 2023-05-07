@@ -10,6 +10,14 @@
 #include <stdint.h>
 #include "deep_loader.h"
 
+// DEEP帧类型
+typedef enum DEEPFrameType {
+    FUNCTION_FRAME,
+    BLOCK_FRAME,
+    IF_FRAME,
+    LOOP_FRAME,
+} DEEPFrameType;
+
 // DEEP帧
 // 每当进入一个新的scope后便会创建一个新的帧，用于存储局部变量和scope本身的信息。
 // 例如，当进入一个函数时，会创建一个新的函数帧，用于存储函数的局部变量和函数的信息。
@@ -41,14 +49,6 @@ typedef struct DEEPInterpFrame {
     DEEPFrameType type;
     uint8_t *local_vars;
 } DEEPInterpFrame;
-
-// DEEP帧类型
-typedef enum DEEPFrameType {
-    FUNCTION_FRAME,
-    BLOCK_FRAME,
-    IF_FRAME,
-    LOOP_FRAME,
-} DEEPFrameType;
 
 // 操作数栈
 // TODO：似乎不需要该类型，因为DEEPExecEnv中的sp和sp_end已经足够了。
