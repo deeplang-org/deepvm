@@ -189,6 +189,18 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         deep_debug("BLOCK: %x\n", opcode);
         switch (opcode)
         {
+        // 需要特殊考虑的指令：
+        case op_block:
+        case op_loop:
+        case op_if:
+            ip++;
+            READ_BYTE(ip);
+            net_bracket++;
+            break;
+        case op_br_table:
+            ip++;
+            ip += read_leb_u32(&ip) + 1;
+            break;
         case op_end:
             ip++;
             net_bracket--;
@@ -347,17 +359,18 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
             ip++;
             read_leb_u32(&ip);
             break;
-        // 需要特殊考虑的指令：
-        case op_block:
-        case op_loop:
-        case op_if:
+        // 需要两个leb立即数的指令：
+        case i32_load:
+        case i64_load:
+        case f32_load:
+        case f64_load:
+        case i32_store:
+        case i64_store:
+        case f32_store:
+        case f64_store:
             ip++;
-            READ_BYTE(ip);
-            net_bracket++;
-            break;
-        case op_br_table:
-            ip++;
-            ip += read_leb_u32(&ip) + 1;
+            read_leb_u32(&ip);
+            read_leb_u32(&ip);
             break;
         default:
             deep_error("Unknown opcode %x!", opcode);
@@ -553,20 +566,72 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 uint32_t base = popU32();
                 uint32_t align = read_leb_u32(&ip);
-                ip++;
                 uint32_t offset = read_leb_u32(&ip);
                 uint32_t number = read_mem32(memory + base, offset);
                 pushU32(number);
+                break;
+            }
+            case i64_load: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                uint64_t number = read_mem64(memory + base, offset);
+                pushU64(number);
+                break;
+            }
+            case f32_load: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                uint32_t number = read_mem32(memory + base, offset);
+                pushF32(*(float *)&number);
+                break;
+            }
+            case f64_load: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                uint32_t number = read_mem64(memory + base, offset);
+                pushF64(*(double *)&number);
                 break;
             }
             case i32_store: {
                 ip++;
                 uint32_t base = popU32();
                 uint32_t align = read_leb_u32(&ip);
-                ip++;
                 uint32_t offset = read_leb_u32(&ip);
                 uint32_t number = popU32();
                 write_mem32(memory + base, number, offset);
+                break;
+            }
+            case i64_store: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                uint64_t number = popU64();
+                write_mem64(memory + base, number, offset);
+                break;
+            }
+            case f32_store: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                float number = popF32();
+                write_mem32(memory + base, *(uint32_t *)&number, offset);
+                break;
+            }
+            case f64_store: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                double number = popF64();
+                write_mem64(memory + base, *(uint64_t *)&number, offset);
                 break;
             }
             case op_local_get: {

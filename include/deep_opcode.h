@@ -38,7 +38,13 @@ enum DEEPOpcode {
     op_global_set = 0x24,
     //内存指令
     i32_load = 0x28,
+    i64_load = 0x29,
+    f32_load = 0x2A,
+    f64_load = 0x2B,
     i32_store = 0x36,
+    i64_store = 0x37,
+    f32_store = 0x38,
+    f64_store = 0x39,
     //常数指令
     i32_const = 0x41,
     i64_const = 0x42,
