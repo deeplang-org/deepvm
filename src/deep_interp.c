@@ -1620,6 +1620,7 @@ uint8_t *enter_frame(DEEPExecEnv *current_env, DEEPModule *module, DEEPFunction 
     while (!exited_natually && current_env->jump_depth == 0) {
         // 如果不是循环帧，那么执行完毕就可以退出了
         if (frame_type != LOOP_FRAME) break;
+        exited_natually = exec_instructions(current_env, module);
     }
 
     // 执行完毕退栈
