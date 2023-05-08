@@ -561,6 +561,14 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 popU32();
                 break;
             }
+            case op_select: {
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                uint32_t c = popU32();
+                pushU32(a ? c : b);
+                break;
+            }
             /* 内存指令 */
             case i32_load: {
                 ip++;
@@ -600,37 +608,37 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             }
             case i32_store: {
                 ip++;
+                uint32_t number = popU32();
                 uint32_t base = popU32();
                 uint32_t align = read_leb_u32(&ip);
                 uint32_t offset = read_leb_u32(&ip);
-                uint32_t number = popU32();
                 write_mem32(memory + base, number, offset);
                 break;
             }
             case i64_store: {
                 ip++;
+                uint64_t number = popU64();
                 uint32_t base = popU32();
                 uint32_t align = read_leb_u32(&ip);
                 uint32_t offset = read_leb_u32(&ip);
-                uint64_t number = popU64();
                 write_mem64(memory + base, number, offset);
                 break;
             }
             case f32_store: {
                 ip++;
+                float number = popF32();
                 uint32_t base = popU32();
                 uint32_t align = read_leb_u32(&ip);
                 uint32_t offset = read_leb_u32(&ip);
-                float number = popF32();
                 write_mem32(memory + base, *(uint32_t *)&number, offset);
                 break;
             }
             case f64_store: {
                 ip++;
+                double number = popF64();
                 uint32_t base = popU32();
                 uint32_t align = read_leb_u32(&ip);
                 uint32_t offset = read_leb_u32(&ip);
-                double number = popF64();
                 write_mem64(memory + base, *(uint64_t *)&number, offset);
                 break;
             }
@@ -907,15 +915,6 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushU32(b >= a ? 1 : 0);
                 break;
             }
-            /* 参数指令 */
-            case op_select: {
-                ip++;
-                uint32_t a = popU32();
-                uint32_t b = popU32();
-                uint32_t c = popU32();
-                pushU32(a ? c : b);
-                break;
-            }
             /* 算术指令 */
             case i32_add: {
                 ip++;
@@ -1017,13 +1016,13 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             }
             case i32_const: {
                 ip++;
-                uint32_t temp = read_leb_i32(&ip);
+                uint32_t temp = read_leb_u32(&ip);
                 pushU32(temp);
                 break;
             }
             case i64_const: {
                 ip++;
-                uint64_t temp = read_leb_i64(&ip);
+                uint64_t temp = read_leb_u64(&ip);
                 pushU64(temp);
                 break;
             }
