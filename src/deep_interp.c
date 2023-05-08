@@ -1016,13 +1016,13 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             }
             case i32_const: {
                 ip++;
-                uint32_t temp = read_leb_u32(&ip);
+                uint32_t temp = read_leb_i32(&ip);
                 pushU32(temp);
                 break;
             }
             case i64_const: {
                 ip++;
-                uint64_t temp = read_leb_u64(&ip);
+                uint64_t temp = read_leb_i64(&ip);
                 pushU64(temp);
                 break;
             }

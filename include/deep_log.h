@@ -28,7 +28,7 @@ Description: head file of dump/debug funtions for logs
 #ifndef _DEEP_LOG_H
 #define _DEEP_LOG_H
 
-#define DEBUG
+// #define DEBUG
 #ifdef __cplusplus
 extern "C" {
 #endif
