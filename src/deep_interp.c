@@ -405,7 +405,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 DEEPType *type = deep_malloc(sizeof(DEEPType));
                 //block无参数
                 type->param_count = 0;
-                type->ret_count = return_type == op_type_void ? 0 : 1;
+                type->ret_count = return_type == type_void ? 0 : 1;
                 //设置返回值的类型（如果有）
                 if (type->ret_count == 1) {
                     type->type = deep_malloc(1);
@@ -449,7 +449,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 DEEPType *type = deep_malloc(sizeof(DEEPType));
                 //if无参数
                 type->param_count = 0;
-                type->ret_count = return_type == op_type_void ? 0 : 1;
+                type->ret_count = return_type == type_void ? 0 : 1;
                 //设置返回值的类型（如果有）
                 if (type->ret_count == 1) {
                     type->type = deep_malloc(1);
@@ -1577,13 +1577,13 @@ int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     // 根据返回值类型，返回不同类型的值
     switch (ret_type)
     {
-    case op_type_i32:
+    case type_i32:
         return *(uint32_t *)(current_env->sp - 4);
-    case op_type_i64:
+    case type_i64:
         return *(uint64_t *)(current_env->sp - 8);
-    case op_type_f32:
+    case type_f32:
         return *(float *)(current_env->sp - 4);
-    case op_type_f64:
+    case type_f64:
         return *(double *)(current_env->sp - 8);
     default:
         deep_error("Unrecognised return type %p\n", ret_type);

@@ -30,13 +30,13 @@
 uint8_t wasm_type_size(uint8_t type) {
     switch (type)
     {
-    case op_type_i32:
-    case op_type_f32:
+    case type_i32:
+    case type_f32:
         return 4;
-    case op_type_i64:
-    case op_type_f64:
+    case type_i64:
+    case type_f64:
         return 8;
-    case op_type_void:
+    case type_void:
         return 0;
     default:
         deep_error("Invalid type 0x%x!", type);
