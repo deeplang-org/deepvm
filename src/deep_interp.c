@@ -186,7 +186,7 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         // 提取指令码
         // 立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t)*ip;
-        deep_debug("BLOCK: %x\n", opcode);
+        deep_debug("BLOCK: %s\n", printDEEPOpcode(opcode));
         switch (opcode)
         {
         // 需要特殊考虑的指令：
@@ -398,7 +398,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
         // 提取指令码
         // 立即数存在的话，提取指令码时提取立即数
         uint32_t opcode = (uint32_t) *ip;
-        deep_debug("OP: %x\n", opcode);
+        deep_debug("OP: %s\n", printDEEPOpcode(opcode));
         switch (opcode) {
             /* 控制指令 */
             case op_unreachable: {
@@ -1518,7 +1518,6 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     frame->function = func;
     frame->prev_func_frame = current_env->cur_frame;
     frame->type = FUNCTION_FRAME;
-     deep_debug("Create frame for local vars: %u\n", func->local_var_offsets[func->local_var_count]);
     frame->local_vars = (uint8_t *)deep_malloc(func->local_var_offsets[func->local_var_count]);
     // 局部变量的空间已经在函数帧中分配好
     current_env->local_vars = frame->local_vars;

@@ -180,8 +180,7 @@ enum DEEPOpcode {
     f64_reinterpret_i64 = 0xBF,
 };
 
-inline const char *printDEEPOpcode(uint32_t opcode) {
 
-}
+const char *printDEEPOpcode(uint32_t opcode);
 
 #endif /* _DEEP_OPCODE_H */
