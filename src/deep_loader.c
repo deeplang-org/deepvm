@@ -30,13 +30,13 @@
 uint8_t wasm_type_size(uint8_t type) {
     switch (type)
     {
-    case op_type_i32:
-    case op_type_f32:
+    case type_i32:
+    case type_f32:
         return 4;
-    case op_type_i64:
-    case op_type_f64:
+    case type_i64:
+    case type_f64:
         return 8;
-    case op_type_void:
+    case type_void:
         return 0;
     default:
         deep_error("Invalid type 0x%x!", type);
@@ -73,11 +73,11 @@ int32_t read_leb_i32(uint8_t** p) {
     uint8_t* buf = *p;
     int32_t res = 0;
     for (int32_t i = 0; i < 5; i++) {
-        res |= (buf[i] & 0x7f) << (i * 7);
+        res |= (uint32_t)(buf[i] & 0x7f) << (i * 7);
         if ((buf[i] & 0x80) == 0) {
             *p += i + 1;
-            if((buf[i] & 0x40) != 0) {
-                res = res | (-1 << ((i + 1) * 7));
+            if(i * 7 < (sizeof(int32_t) * 8) && (buf[i] & 0x40) != 0) {
+                res = res | -((uint32_t)1 << ((i + 1) * 7));
             }
             return res;
         }
@@ -89,7 +89,7 @@ int32_t read_leb_i32(uint8_t** p) {
  * @brief read unsigned int 64bits
  *
  * @param p
- * @return uint32_t
+ * @return uint64_t
  */
 uint64_t read_leb_u64(uint8_t** p) {
     uint8_t* buf = *p;
@@ -108,17 +108,17 @@ uint64_t read_leb_u64(uint8_t** p) {
  * @brief read signed int 64bits
  *
  * @param p
- * @return uint32_t
+ * @return int64_t
  */
 int64_t read_leb_i64(uint8_t** p) {
     uint8_t* buf = *p;
     int64_t res = 0;
     for (int64_t i = 0; i < 10; i++) {
-        res |= (buf[i] & 0x7f) << (i * 7);
+        res |= (uint64_t)(buf[i] & 0x7f) << (i * 7);
         if ((buf[i] & 0x80) == 0) {
             *p += i + 1;
-            if((buf[i] & 0x40) != 0) {
-                res = res | (-1 << ((i + 1) * 7));
+            if(i * 7 < (sizeof(int64_t) * 8) && (buf[i] & 0x40) != 0) {
+                res = res | -((uint64_t)1 << ((i + 1) * 7));
             }
             return res;
         }
