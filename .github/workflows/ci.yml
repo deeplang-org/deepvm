@@ -2,7 +2,7 @@ name: Deeplang CI
 
 on:
   push:
-    branches: [ "dev", "fix-and-doc" ]
+    branches: [ "dev" ]
   pull_request:
     branches: [ "dev" ]
 
