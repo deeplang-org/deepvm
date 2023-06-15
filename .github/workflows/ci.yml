@@ -14,12 +14,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: build
-      run:
+      run: |
         mkdir build
         cd build
         cmake ..
         make
     - name: test
-      run:
+      run: |
         cd test
         python3 test.py
