@@ -1,0 +1,25 @@
+name: Deeplang CI
+
+on:
+  push:
+    branches: [ "dev", "fix-and-doc" ]
+  pull_request:
+    branches: [ "dev" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: build
+      run:
+        mkdir build
+        cd build
+        cmake ..
+        make
+    - name: test
+      run:
+        cd test
+        python3 test.py
