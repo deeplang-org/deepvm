@@ -2,7 +2,11 @@ import platform
 import subprocess
 
 
+total_failures = 0
+
+
 def test_with_path(path, expected=None, returncode=0):
+    global total_failures
     # # Check memory leak using "leaks" on Apple Chip
     # if (platform.system() == 'Darwin' and platform.processor() == 'arm'):
     #     try:
@@ -17,6 +21,7 @@ def test_with_path(path, expected=None, returncode=0):
         if (actual == str(expected).strip().replace('\r\n', '\n')):
             print(f"PASS: {path} passed!")
         else:
+            total_failures += 1
             print(
                 f"FAIL: {path} failed! Expecting {expected} but getting {actual}")
     except subprocess.CalledProcessError as e:
@@ -24,6 +29,7 @@ def test_with_path(path, expected=None, returncode=0):
             print(
                 f"PASS: {path} passed with the expected exit code {returncode}!")
         else:
+            total_failures += 1
             print(f"FAIL: {path} failed with exit code {e.returncode}!")
 
 
@@ -73,3 +79,7 @@ test_with_path('control/loop_001.wasm', '55')
 test_with_path('control/switch_case_001.wasm', '65')
 test_with_path('control/tri_if_001.wasm', '30')
 test_with_path('control/tri_if_002.wasm', '60')
+
+if total_failures > 0:
+    print(f"Total {total_failures} tests failed!")
+    exit(1)
