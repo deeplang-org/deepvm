@@ -1,16 +1,30 @@
+import platform
 import subprocess
 import platform
 
 sys = platform.system()
 BIN_PATH = '../bin/deepvm.exe' if sys == 'Windows' else '../bin/deepvm'
 
+total_failures = 0
+
+
 def test_with_path(path, expected=None, returncode=0):
+    global total_failures
+    # # Check memory leak using "leaks" on Apple Chip
+    # if (platform.system() == 'Darwin' and platform.processor() == 'arm'):
+    #     try:
+    #         subprocess.check_call(
+    #             ['leaks', '--atExit', '--', '../bin/deepvm', path], stdout=subprocess.DEVNULL)
+    #     except subprocess.CalledProcessError as e:
+    #         print(f"FAIL: {path} failed memory leak test!")
+
     try:
         actual = subprocess.check_output(
             [BIN_PATH, path]).decode('utf-8').strip().replace('\r\n', '\n')
         if (actual == str(expected).strip().replace('\r\n', '\n')):
             print(f"PASS: {path} passed!")
         else:
+            total_failures += 1
             print(
                 f"FAIL: {path} failed! Expecting {expected} but getting {actual}")
     except subprocess.CalledProcessError as e:
@@ -18,6 +32,7 @@ def test_with_path(path, expected=None, returncode=0):
             print(
                 f"PASS: {path} passed with the expected exit code {returncode}!")
         else:
+            total_failures += 1
             print(f"FAIL: {path} failed with exit code {e.returncode}!")
 
 
@@ -27,7 +42,6 @@ test_with_path('math/add_float_10.2_0.0.wasm', 10)
 test_with_path('math/add_int_-2_-10.wasm', 4294967284)
 test_with_path('math/add_int_0_-10.wasm', 4294967286)
 test_with_path('math/add_int_65535_10.wasm', 65545)
-test_with_path('math/add_int64_0_-10.wasm', -10)
 test_with_path('math/div_float_-100.88_-0.7.wasm', 144)
 test_with_path('math/div_float_0_-23.1.wasm', 0)
 test_with_path('math/div_float_22.7_-0.7.wasm', 4294967264)
@@ -55,6 +69,9 @@ test_with_path('math/sub_int_-10_-8.wasm', 4294967294)
 test_with_path('math/sub_int_0_-10.wasm', 4294967286)
 test_with_path('math/sub_int_65535_10.wasm', 65525)
 
+test_with_path('math/add_int64_0_-10.wasm', -10)
+test_with_path('math/add_int64_res_-1.wasm', -1)
+
 test_with_path('builtin/builtin_puts_00001.wasm', 'hello deeplang\n0')
 test_with_path('builtin/builtin_puts_00002.wasm', 'add(7,8)=150')
 test_with_path('builtin/builtin_puts_00003.wasm', 'add(7.1,8.2)=15.2999990')
@@ -65,3 +82,7 @@ test_with_path('control/loop_001.wasm', '55')
 test_with_path('control/switch_case_001.wasm', '65')
 test_with_path('control/tri_if_001.wasm', '30')
 test_with_path('control/tri_if_002.wasm', '60')
+
+if total_failures > 0:
+    print(f"Total {total_failures} tests failed!")
+    exit(1)

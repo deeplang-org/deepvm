@@ -23,6 +23,9 @@ int32_t main(int argv, char **args) {
     // 初始化deepmem
     deep_mem_init(deepmem, MEM_SIZE);
 
+    // 测试用：获取当前空闲内存数量
+    uint64_t free_mem = deep_get_free_memory();
+
     char *path;
     if(argv==1){
         deep_error("no file input!");
@@ -66,7 +69,7 @@ int32_t main(int argv, char **args) {
     current_env->jump_depth = 0;
     int64_t ans = call_main(current_env, module);
 
-    printf("%lld\n", ans);
+    printf("%ld\n", ans);
     fflush(stdout);
 
     /* release memory */
@@ -78,5 +81,11 @@ int32_t main(int argv, char **args) {
     deep_free(current_env->memory);
     deep_free(q);
     p = NULL;
+
+    // 测试用：如果结束时空闲内存数量不变，说明没有内存泄漏
+    if (free_mem != deep_get_free_memory()) {
+        deep_error("memory leak!");
+        return -1;
+    }
     return 0;
 }

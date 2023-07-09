@@ -7,7 +7,7 @@
 #include "deep_log.h"
 #include "deep_mem.h"
 
-#define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
+// #define REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
 
 #ifdef REVERT_TO_DEFAULT_MEMORY_MANAGEMENT
 #include "stdlib.h"
@@ -127,7 +127,7 @@ bool deep_mem_init (void *mem, uint32_t size)
   {
     fast_block_t block;
     block_payload_offset
-      = ((uint32_t)&block.payload - (uint32_t)&block.head);
+      =(uint32_t)((uint8_t *)&block.payload - (uint8_t *)&block.head);
   }
   PRINT_ARG("Offset: %u\n", block_payload_offset);
 
@@ -183,7 +183,7 @@ deep_malloc(uint32_t size)
 void *
 deep_malloc(uint32_t size)
 {
-  if (pool->free_memory < size)
+  if (pool->free_memory < size || size == 0)
   {
     return NULL;
   }
@@ -210,7 +210,6 @@ deep_malloc_fast_bins(block_size_t aligned_size)
   block_size_t payload_size;
   if (pool->fast_bins[offset].addr != NULL) 
   {
-    // PRINT_ARG("%s", "Fast block from stack\n");
     ret = pool->fast_bins[offset].addr;
     pool->fast_bins[offset].addr = ret->payload.next;
     P_flag = prev_block_is_allocated(&ret->head);
@@ -220,7 +219,6 @@ deep_malloc_fast_bins(block_size_t aligned_size)
   // When there are no available fast blocks, grab at the end of the remainder.
   else if (aligned_size <= get_remainder_size(pool)) 
   {
-    // PRINT_ARG("%s", "Fast block from remainder\n");
     ret = (fast_block_t *)(get_pointer_by_offset_in_bytes
         (pool->remainder_block_end,
         -(int64_t)aligned_size - sizeof(block_head_t)));
@@ -234,15 +232,15 @@ deep_malloc_fast_bins(block_size_t aligned_size)
     return NULL;
   }
 
-  memset (&ret->payload, 0, aligned_size);
+  memset (&ret->payload, 0, payload_size);
   block_set_A_flag (&ret->head, true);
   block_set_P_flag (&ret->head, P_flag);
   pool->free_memory -= payload_size;
 
-  // PRINT_ARG("Remainder start (after allocation): %p\n", pool->remainder_block_head);
-  // PRINT_ARG("Remainder end (after allocation):   %p\n", pool->remainder_block_end);
-  PRINT_ARG("Payload size (after allocation):    %u\n", payload_size);
-
+  PRINT_ARG("Remainder start (after fast allocation): %p\n", pool->remainder_block_head);
+  PRINT_ARG("Remainder end (after fast allocation):   %p\n", pool->remainder_block_end);
+  PRINT_ARG("Payload size (after fast allocation):    %u\n", payload_size);
+  PRINT_ARG("Free memory (after fast allocation):     %llu\n", pool->free_memory);
   return &ret->payload;
 }
 
@@ -281,10 +279,10 @@ deep_malloc_sorted_bins (block_size_t aligned_size)
   block_set_P_flag (&get_block_by_offset (ret, aligned_size)->head, true);
   pool->free_memory -= payload_size;
 
-  // PRINT_ARG("Remainder start (after allocation): %p\n", pool->remainder_block_head);
-  // PRINT_ARG("Remainder end (after allocation):   %p\n", pool->remainder_block_end);
+  PRINT_ARG("Remainder start (after allocation): %p\n", pool->remainder_block_head);
+  PRINT_ARG("Remainder end (after allocation):   %p\n", pool->remainder_block_end);
   PRINT_ARG("Payload size (after allocation):    %u\n", payload_size);
-  // PRINT_ARG("Free memory (after allocation):     %llu\n", pool->free_memory);
+  PRINT_ARG("Free memory (after allocation):     %llu\n", pool->free_memory);
 
   return &ret->payload;
 }
@@ -305,17 +303,20 @@ deep_free (void *ptr)
 void
 deep_free (void *ptr)
 {
+  if (ptr == NULL)
+  {
+    return;
+  }
+
   void *head = 
       get_pointer_by_offset_in_bytes(ptr, -(int64_t)block_payload_offset);
- 
-  if (ptr == NULL || !block_is_allocated((block_head_t *)head))
+  if (!block_is_allocated((block_head_t *)head))
   {
     // PRINT_ARG("Double Free: %u\n", ptr == NULL);
     return;
   }
   block_size_t block_size = 
       block_get_size((block_head_t *)head) + block_payload_offset;
-
   if (block_size <= FAST_BIN_MAX_SIZE)
   {
     deep_free_fast_bins(head);
@@ -343,8 +344,8 @@ deep_free_fast_bins(void *ptr)
   }
   pool->fast_bins[offset].addr = block;
 
-  // PRINT_ARG("Remainder start (after free fast): %p\n", pool->remainder_block_head);
-  // PRINT_ARG("Remainder end (after free fast):   %p\n", pool->remainder_block_end);
+  PRINT_ARG("Remainder start (after free fast): %p\n", pool->remainder_block_head);
+  PRINT_ARG("Remainder end (after free fast):   %p\n", pool->remainder_block_end);
   PRINT_ARG("Payload size (after free fast):    %u\n", payload_size);
   PRINT_ARG("Free memory (after free fast):     %llu\n", pool->free_memory);
 }
@@ -397,8 +398,8 @@ deep_free_sorted_bins (void *ptr)
 
   pool->free_memory += payload_size;
 
-  // PRINT_ARG("Remainder start (after free): %p\n", pool->remainder_block_head);
-  // PRINT_ARG("Remainder end (after free):   %p\n", pool->remainder_block_end);
+  PRINT_ARG("Remainder start (after free): %p\n", pool->remainder_block_head);
+  PRINT_ARG("Remainder end (after free):   %p\n", pool->remainder_block_end);
   PRINT_ARG("Payload size (after free):    %u\n", payload_size);
   PRINT_ARG("Free memory (after free):     %llu\n", pool->free_memory);
 }
@@ -697,3 +698,6 @@ static void _remove_sorted_block_from_skiplist (sorted_block_t *block)
   /* no other cases, as if it is the first node, it should be the only node. */
 }
 
+uint64_t deep_get_free_memory(void) {
+  return pool->free_memory;
+}

@@ -17,6 +17,7 @@
 /**
  * @brief section NO
  *
+ * 目前只实现了Type, Import, Func, Export, 和Data这几个section
  */
 #define SECTION_TYPE_USER 0
 #define SECTION_TYPE_TYPE 1
@@ -58,8 +59,10 @@ typedef struct DEEPType
 } DEEPType;
 
 /**
- * @brief local variable information in DEEPFunction
+ * @brief local variable information in DEEPBlock
  *
+ * 在WASM中，如果一个函数的有连续几个类型一样的参数，它可以指定这些参数的数量和类型而不是
+ * 一个一个地写出来。这个结构体就是用来存储这些信息的。
  */
 typedef struct LocalVarCluster
 {
@@ -68,18 +71,21 @@ typedef struct LocalVarCluster
 } LocalVarCluster;
 
 /**
- * @brief items of functoin section
+ * @brief items of function/block section
  *
  */
 typedef struct DEEPFunction
 {
-    DEEPType *func_type; // the type of function
-    LocalVarCluster *local_var_types; // Local variables' type informations
+    DEEPType *func_type; // 函数的类型
+    LocalVarCluster *local_var_types; // 详见上面的注释
     uint32_t code_size;
-    uint8_t *code_begin;
-    uint8_t local_var_count; // Including function parameters
+    uint8_t *code_begin; // 代码开始的位置（在内存中）
+    uint8_t local_var_count; // 函数中的局部变量数量，包含参数
+    // 每个局部变量的偏移量，用于计算局部变量的地址
+    // 它的长度是local_var_count + 1，最后一个位置存的是所有变量的总长度
+    // 此设计可读性较差，将来可以考虑单独拆出一个变量来存此信息
     uint32_t *local_var_offsets;
-    bool is_import;
+    bool is_import; // 若为false，则是Deeplang“打洞”引入的函数，否则是wasm中的import函数
 } DEEPFunction;
 
 /**
@@ -157,6 +163,8 @@ uint32_t read_leb_u32(uint8_t** p);
 int32_t read_leb_i32(uint8_t** p);
 uint64_t read_leb_u64(uint8_t** p);
 int64_t read_leb_i64(uint8_t** p);
+
+// 以下是一些helper
 
 /**
  * @brief Read a little-endian 32-bit floating point number.

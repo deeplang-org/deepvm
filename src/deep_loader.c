@@ -27,16 +27,17 @@
 #define WASM_MAGIC_SIZE 4
 #define WASM_VERSION_SIZE 4
 
+// 计算每种类型的大小
 uint8_t wasm_type_size(uint8_t type) {
     switch (type)
     {
-    case op_type_i32:
-    case op_type_f32:
+    case type_i32:
+    case type_f32:
         return 4;
-    case op_type_i64:
-    case op_type_f64:
+    case type_i64:
+    case type_f64:
         return 8;
-    case op_type_void:
+    case type_void:
         return 0;
     default:
         deep_error("Invalid type 0x%x!", type);
@@ -73,11 +74,11 @@ int32_t read_leb_i32(uint8_t** p) {
     uint8_t* buf = *p;
     int32_t res = 0;
     for (int32_t i = 0; i < 5; i++) {
-        res |= (buf[i] & 0x7f) << (i * 7);
+        res |= (uint32_t)(buf[i] & 0x7f) << (i * 7);
         if ((buf[i] & 0x80) == 0) {
             *p += i + 1;
-            if((buf[i] & 0x40) != 0) {
-                res = res | (-1 << ((i + 1) * 7));
+            if(i * 7 < (sizeof(int32_t) * 8) && (buf[i] & 0x40) != 0) {
+                res = res | -((uint32_t)1 << ((i + 1) * 7));
             }
             return res;
         }
@@ -89,7 +90,7 @@ int32_t read_leb_i32(uint8_t** p) {
  * @brief read unsigned int 64bits
  *
  * @param p
- * @return uint32_t
+ * @return uint64_t
  */
 uint64_t read_leb_u64(uint8_t** p) {
     uint8_t* buf = *p;
@@ -108,17 +109,17 @@ uint64_t read_leb_u64(uint8_t** p) {
  * @brief read signed int 64bits
  *
  * @param p
- * @return uint32_t
+ * @return int64_t
  */
 int64_t read_leb_i64(uint8_t** p) {
     uint8_t* buf = *p;
     int64_t res = 0;
     for (int64_t i = 0; i < 10; i++) {
-        res |= (buf[i] & 0x7f) << (i * 7);
+        res |= (uint64_t)(buf[i] & 0x7f) << (i * 7);
         if ((buf[i] & 0x80) == 0) {
             *p += i + 1;
-            if((buf[i] & 0x40) != 0) {
-                res = res | (-1 << ((i + 1) * 7));
+            if(i * 7 < (sizeof(int64_t) * 8) && (buf[i] & 0x40) != 0) {
+                res = res | -((uint64_t)1 << ((i + 1) * 7));
             }
             return res;
         }
@@ -231,7 +232,7 @@ static void decode_type_section(const uint8_t* p, DEEPModule* module) {
 }
 
 /**
- * @brief read funciton section
+ * @brief read function section
  *
  * @param p
  * @param module
@@ -244,16 +245,20 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
     uint8_t local_var_count;
     DEEPFunction *func;
     const uint8_t *p_code_temp;
+
     if (func_count != code_func_count) {
         deep_error("function count is not equal to function body count");
         return;
     }
+
     uint32_t import_func_count = module->import_function_count;
     uint32_t all_func_count = import_func_count + func_count;
     module->function_count = all_func_count;
     module->func_section = (DEEPFunction**)deep_malloc(all_func_count * sizeof(DEEPFunction*));
 
-    /* functions from import section */
+    /* functions from import section
+       这些是“打洞”出来的函数，其定义都写在C里
+       它们只有Parameter，没有Local Variable */
     int32_t import_func_index = 0;
     DEEPImport *import = NULL;
     for(int32_t i = 0; i < module->import_count; i++) {
@@ -270,10 +275,17 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
             func->local_var_count = func->func_type->param_count;
 
             func->local_var_offsets = (uint32_t *)deep_malloc(sizeof(uint32_t) * (func->local_var_count + 1));
+            func->local_var_types = (LocalVarCluster *)deep_malloc(func->local_var_count * sizeof(LocalVarCluster));
+
+            // 计算每一个局部变量（也就是参数）的偏移量
             uint32_t offset = 0;
             for (uint32_t j = 0; j < func->local_var_count; j++) {
+                func->local_var_types[j].count = 1;
+                func->local_var_types[j].local_type = func->func_type->type[j];
                 func->local_var_offsets[j] = offset;
+                offset += wasm_type_size(func->local_var_types[j].local_type);
             }
+
             func->local_var_offsets[func->local_var_count] = offset;
             import_func_index++;
         }
@@ -288,6 +300,7 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
         p_code_temp = p_code;
         func->is_import = false;
         func->func_type = module->type_section[type_index];
+
         // The local variables also include the parameters
         local_var_count = func->func_type->param_count;
         local_set_count = local_var_count + read_leb_u32((uint8_t**)&p_code);
@@ -295,12 +308,12 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
             func->local_var_types = NULL;
         } else {
             func->local_var_types = (LocalVarCluster *)deep_malloc(local_set_count * sizeof(LocalVarCluster));
-            // For parameters, the count is 1, and the type
-            // is the type of the corresponding parameter
+            // 对参数而言，count为1，type和函数类型中描述的一致
             for (uint32_t j = 0; j < func->func_type->param_count; j++) {
                 func->local_var_types[j].count = 1;
                 func->local_var_types[j].local_type = func->func_type->type[j];
             }
+            // 对于非参数的局部变量，每个LocalVarCluster里的变量的类型都是一样的
             for (uint32_t j = func->func_type->param_count; j < local_set_count; j++) {
                 func->local_var_types[j].count = read_leb_u32((uint8_t **)&p_code);
                 local_var_count += func->local_var_types[j].count;
@@ -308,11 +321,13 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
             }
         }
 
+        // 函数的信息
         func->code_begin = (uint8_t*)p_code;
         func->local_var_count = local_var_count;
         func->code_size = code_size - (uint32_t)(p_code - p_code_temp);
         p_code = p_code_temp + code_size;
 
+        // 计算每个局部变量的偏移量
         func->local_var_offsets = (uint32_t *)deep_malloc(sizeof(uint32_t) * (func->local_var_count + 1));
         uint32_t offset = 0;
         uint32_t j = 0;
@@ -323,8 +338,10 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
                 j += 1;
             }
         }
+
         assert(j == func->local_var_count);
         func->local_var_offsets[j] = offset;
+
         import_func_index++;
     }
 }
@@ -475,7 +492,6 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
             break;
         case SECTION_TYPE_DATA:
             decode_data_section(buf, module);
-
             break;
         default:
 
@@ -485,7 +501,7 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
     }
 }
 
-DEEPModule* deep_load(uint8_t** p, int size) {
+DEEPModule* deep_load(uint8_t** p, int32_t size) {
     if (!check_magic_number_and_version(p)) {
         deep_error("magic number error");
         return NULL;

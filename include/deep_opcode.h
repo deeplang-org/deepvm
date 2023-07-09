@@ -3,13 +3,17 @@
 //
 #ifndef _DEEP_OPCODE_H
 #define _DEEP_OPCODE_H
-enum DEEPOpcode {
+
+enum DEEPOPType {
     /* 类型 */
-    op_type_void = 0x40,
-    op_type_i32 = 0x7F,
-    op_type_f32 = 0x7D,
-    op_type_i64 = 0x7E,
-    op_type_f64 = 0x7C,
+    type_void = 0x40,
+    type_i32 = 0x7F,
+    type_f32 = 0x7D,
+    type_i64 = 0x7E,
+    type_f64 = 0x7C,
+};
+
+enum DEEPOpcode {
     /* 参数指令 */
     op_drop = 0x1A,
     op_select = 0x1B,
@@ -34,7 +38,13 @@ enum DEEPOpcode {
     op_global_set = 0x24,
     //内存指令
     i32_load = 0x28,
+    i64_load = 0x29,
+    f32_load = 0x2A,
+    f64_load = 0x2B,
     i32_store = 0x36,
+    i64_store = 0x37,
+    f32_store = 0x38,
+    f64_store = 0x39,
     //常数指令
     i32_const = 0x41,
     i64_const = 0x42,
@@ -169,5 +179,8 @@ enum DEEPOpcode {
     f32_reinterpret_i32 = 0xBE,
     f64_reinterpret_i64 = 0xBF,
 };
+
+
+const char *printDEEPOpcode(uint32_t opcode);
 
 #endif /* _DEEP_OPCODE_H */
