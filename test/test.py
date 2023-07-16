@@ -71,6 +71,7 @@ test_with_path('math/sub_int_65535_10.wasm', 65525)
 
 test_with_path('math/add_int64_0_-10.wasm', -10)
 test_with_path('math/add_int64_res_-1.wasm', -1)
+test_with_path('math/sub_int64_64_-8.wasm', 72)
 
 test_with_path('builtin/builtin_puts_00001.wasm', 'hello deeplang\n0')
 test_with_path('builtin/builtin_puts_00002.wasm', 'add(7,8)=150')
