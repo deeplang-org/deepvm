@@ -18,3 +18,7 @@ wasm2wat input.wasm -o output.wat
 ```
 wat2wasm input.wat -o output.wasm
 ```
+
+64bit
+
+符合 IEEE754 标准
