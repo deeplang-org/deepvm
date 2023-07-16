@@ -22,15 +22,17 @@ def test_with_path(path, expected=None, returncode=0):
         actual = subprocess.check_output(
             [BIN_PATH, path]).decode('utf-8').strip().replace('\r\n', '\n')
         if (actual == str(expected).strip().replace('\r\n', '\n')):
-            print(f"PASS: {path} passed!")
+            # print(f"PASS: {path} passed!")
+            print("PASS")
         else:
             total_failures += 1
             print(
                 f"FAIL: {path} failed! Expecting {expected} but getting {actual}")
     except subprocess.CalledProcessError as e:
         if (returncode == e.returncode):
-            print(
-                f"PASS: {path} passed with the expected exit code {returncode}!")
+            # print(
+            #     f"PASS: {path} passed with the expected exit code {returncode}!")
+            print("PASS")
         else:
             total_failures += 1
             print(f"FAIL: {path} failed with exit code {e.returncode}!")
@@ -71,7 +73,19 @@ test_with_path('math/sub_int_65535_10.wasm', 65525)
 
 test_with_path('math/add_int64_0_-10.wasm', -10)
 test_with_path('math/add_int64_res_-1.wasm', -1)
+test_with_path('math/add_int64_21474836480000_21474.wasm', 21474836501474)
 test_with_path('math/sub_int64_64_-8.wasm', 72)
+test_with_path('math/sub_int64_2147483647_65535', 2147418112)
+test_with_path('math/mult_int64_1024_-65535.wasm', -67107840)
+test_with_path('math/mult_int64_-5_0.wasm', 0)
+test_with_path('math/div_int64_-5_0.wasm', returncode=1)
+test_with_path('math/div_int64_0_-5.wasm', 0)
+test_with_path('math/div_int64_214748364_233.wasm', 921666)
+test_with_path('math/div_int64_214748364_-2147483648.wasm', 0)
+test_with_path('math/div_int64_2147483648_-100.wasm', -21474836)
+test_with_path('math/mod_int64_11_4.wasm', 3)
+test_with_path('math/mod_int64_2147483648_-10000000.wasm', 7483648)
+test_with_path('math/mod_int64_2147483648_1000.wasm', 648)
 
 test_with_path('builtin/builtin_puts_00001.wasm', 'hello deeplang\n0')
 test_with_path('builtin/builtin_puts_00002.wasm', 'add(7,8)=150')
