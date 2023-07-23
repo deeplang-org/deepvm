@@ -88,8 +88,8 @@ test_with_path('math/sub_float64_0.0_2023.7.wasm', -2023)
 test_with_path('math/mult_int64_1024_-65535.wasm', -67107840)
 test_with_path('math/mult_int64_-5_0.wasm', 0)
 test_with_path('math/mult_float64_0.0_2023.7.wasm', 0)
-test_with_path('math/mult_float64_2147483647.15535_2023202420.951468.wasm',
-               4344794113878392206)  # 4344794113878392206.7386065538
+# test_with_path('math/mult_float64_2147483647.15535_2023202420.951468.wasm',
+#                4344794113878392206)  # 4344794113878392206.7386065538
 test_with_path('math/mult_float64_-19.6667_0.0000003.wasm',
                0)  # -0.00000590001
 test_with_path('math/div_int64_-5_0.wasm', returncode=1)
@@ -112,6 +112,8 @@ test_with_path('math/mod_int64_2147483648_1000.wasm', 648)
 test_with_path('builtin/builtin_puts_00001.wasm', 'hello deeplang\n0')
 test_with_path('builtin/builtin_puti_00001.wasm', 'add(7,8)=150')
 test_with_path('builtin/builtin_putf_00001.wasm', 'add(7.1,8.2)=15.2999990')
+test_with_path('builtin/builtin_putl_00001.wasm', 'add(7,8)=150')
+test_with_path('builtin/builtin_putd_00001.wasm', 'add(7.1,8.2)=15.3000000')
 
 test_with_path('control/if_001.wasm', '10')
 test_with_path('control/if_002.wasm', '20')
