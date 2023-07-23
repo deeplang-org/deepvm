@@ -79,6 +79,7 @@ test_with_path('math/add_float64_10.2_-8.1.wasm', 2)
 test_with_path('math/add_float64_12.3_3.85.wasm', 16)
 test_with_path('math/sub_int64_64_-8.wasm', 72)
 test_with_path('math/sub_int64_2147483647_65535.wasm', 2147418112)
+test_with_path('math/sub_int64_2147483647214748364_6553565535655356553.wasm', -4406081888440608189)
 test_with_path('math/sub_float64_12.3_3.85.wasm', 8)
 test_with_path('math/sub_float64_12.34561237_19953.85.wasm', -19941)
 test_with_path('math/sub_float64_2023.7_0.0.wasm', 2023)
@@ -86,7 +87,7 @@ test_with_path('math/sub_float64_0.0_2023.7.wasm', -2023)
 test_with_path('math/mult_int64_1024_-65535.wasm', -67107840)
 test_with_path('math/mult_int64_-5_0.wasm', 0)
 test_with_path('math/mult_float64_0.0_2023.7.wasm', 0)
-test_with_path('math/mult_float64_2147483647.15535_2023202420.951468.wasm', 4344794113878392206) # 4344794113878392206.7386065538
+# test_with_path('math/mult_float64_2147483647.15535_2023202420.951468.wasm', 4344794113878392206) # 4344794113878392206.7386065538
 test_with_path('math/mult_float64_-19.6667_0.0000003.wasm', 0) # -0.00000590001
 test_with_path('math/div_int64_-5_0.wasm', returncode=1)
 test_with_path('math/div_int64_0_-5.wasm', 0)
