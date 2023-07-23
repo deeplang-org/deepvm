@@ -107,11 +107,27 @@ static void native_putf(DEEPExecEnv *env, DEEPModule *module) {
     pushS32(0);
 }
 
+// 内置函数：输出64位有符号整数
+static void native_putl(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    printf("%ld", popS64());
+    pushS32(0);
+}
+
+// 内置函数：输出64位浮点数
+static void native_putd(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    printf("%lf", popF64());
+    pushS32(0);
+}
+
 // 表：所有的built-in函数
 static DEEPNative g_DeepNativeMap[] = {
     {"puts", (fun_ptr_t)native_puts},
     {"puti", (fun_ptr_t)native_puti},
     {"putf", (fun_ptr_t)native_putf},
+    {"putl", (fun_ptr_t)native_putl},
+    {"putd", (fun_ptr_t)native_putd}
 };
 
 // 内置函数调用
