@@ -41,7 +41,7 @@
 #define STACK_CAPACITY 800
 #define CONTROL_STACK_CAPACITY 100
 
-#define DEEPNATIVE_COUNT 3
+#define DEEPNATIVE_COUNT 5
 
 // 安全除法
 #define DIVIDE(TYPE, DIVIDEND, DIVISOR) \
@@ -110,7 +110,7 @@ static void native_putf(DEEPExecEnv *env, DEEPModule *module) {
 // 内置函数：输出64位有符号整数
 static void native_putl(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
-    printf("%ld", popS64());
+    printf("%lld", popS64());
     pushS32(0);
 }
 
