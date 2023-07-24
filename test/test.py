@@ -88,8 +88,8 @@ test_with_path('math/sub_float64_0.0_2023.7.wasm', -2023)
 test_with_path('math/mult_int64_1024_-65535.wasm', -67107840)
 test_with_path('math/mult_int64_-5_0.wasm', 0)
 test_with_path('math/mult_float64_0.0_2023.7.wasm', 0)
-# test_with_path('math/mult_float64_2147483647.15535_2023202420.951468.wasm',
-#                4344794113878392206)  # 4344794113878392206.7386065538
+test_with_path('math/mult_float64_2147483647.15535_2023202420.951468.wasm',
+               4344794113878392320)
 test_with_path('math/mult_float64_-19.6667_0.0000003.wasm',
                0)  # -0.00000590001
 test_with_path('math/div_int64_-5_0.wasm', returncode=1)
