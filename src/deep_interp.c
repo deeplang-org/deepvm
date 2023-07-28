@@ -41,7 +41,7 @@
 #define STACK_CAPACITY 800
 #define CONTROL_STACK_CAPACITY 100
 
-#define DEEPNATIVE_COUNT 5
+#define DEEPNATIVE_COUNT 9
 
 // 安全除法
 #define DIVIDE(TYPE, DIVIDEND, DIVISOR) \
@@ -89,7 +89,7 @@ static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
     }
 
     printf("%s",(char *)data->data);
-    pushS32(0);
+    pushU32(0);
 }
 
 
@@ -97,28 +97,56 @@ static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
 static void native_puti(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     printf("%d", popS32());
-    pushS32(0);
+    pushU32(0);
 }
 
 // 内置函数：输出32位浮点数
 static void native_putf(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     printf("%f", popF32());
-    pushS32(0);
+    pushU32(0);
 }
 
 // 内置函数：输出64位有符号整数
 static void native_putl(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     printf("%lld", popS64());
-    pushS32(0);
+    pushU32(0);
 }
 
 // 内置函数：输出64位浮点数
 static void native_putd(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     printf("%lf", popF64());
-    pushS32(0);
+    pushU32(0);
+}
+
+// 内置函数：isinf（32位浮点数）
+static void native_isinff(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    float x = popF32();
+    pushU32(isinf(x));
+}
+
+// 内置函数：isnan（32位浮点数）
+static void native_isnanf(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    float x = popF32();
+    pushU32(isnan(x));
+}
+
+// 内置函数：isinf（64位浮点数）
+static void native_isinfd(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    double x = popF64();
+    pushU32(isinf(x));
+}
+
+// 内置函数：isnan（64位浮点数）
+static void native_isnand(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    double x = popF64();
+    pushU32(isnan(x));
 }
 
 // 表：所有的built-in函数
@@ -127,7 +155,11 @@ static DEEPNative g_DeepNativeMap[] = {
     {"puti", (fun_ptr_t)native_puti},
     {"putf", (fun_ptr_t)native_putf},
     {"putl", (fun_ptr_t)native_putl},
-    {"putd", (fun_ptr_t)native_putd}
+    {"putd", (fun_ptr_t)native_putd},
+    {"isinff", (fun_ptr_t)native_isinff},
+    {"isnanf", (fun_ptr_t)native_isnanf},
+    {"isinfd", (fun_ptr_t)native_isinfd},
+    {"isnand", (fun_ptr_t)native_isnand}
 };
 
 // 内置函数调用
