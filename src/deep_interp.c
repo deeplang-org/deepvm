@@ -53,8 +53,6 @@
     (deep_error("Arithmetic Error: Remainder by Zero!"), exit(1), 0), \
         (TYPE)DIVIDEND % (TYPE)DIVISOR)
 
-typedef void *(*fun_ptr_t)(void *);
-
 typedef void (*built_in_function)(DEEPExecEnv *env, DEEPModule *module);
 
 
@@ -65,7 +63,7 @@ typedef void (*built_in_function)(DEEPExecEnv *env, DEEPModule *module);
 // DEEPLang内置函数
 typedef struct {
     char *func_name;
-    fun_ptr_t func;
+    built_in_function func;
 } DEEPNative;
 
 // 内置函数：输出字符串
@@ -151,15 +149,15 @@ static void native_isnand(DEEPExecEnv *env, DEEPModule *module) {
 
 // 表：所有的built-in函数
 static DEEPNative g_DeepNativeMap[] = {
-    {"puts", (fun_ptr_t)native_puts},
-    {"puti", (fun_ptr_t)native_puti},
-    {"putf", (fun_ptr_t)native_putf},
-    {"putl", (fun_ptr_t)native_putl},
-    {"putd", (fun_ptr_t)native_putd},
-    {"isinff", (fun_ptr_t)native_isinff},
-    {"isnanf", (fun_ptr_t)native_isnanf},
-    {"isinfd", (fun_ptr_t)native_isinfd},
-    {"isnand", (fun_ptr_t)native_isnand}
+    {"puts", (built_in_function)native_puts},
+    {"puti", (built_in_function)native_puti},
+    {"putf", (built_in_function)native_putf},
+    {"putl", (built_in_function)native_putl},
+    {"putd", (built_in_function)native_putd},
+    {"isinff", (built_in_function)native_isinff},
+    {"isnanf", (built_in_function)native_isnanf},
+    {"isinfd", (built_in_function)native_isinfd},
+    {"isnand", (built_in_function)native_isnand}
 };
 
 // 内置函数调用
@@ -1580,14 +1578,14 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     }
     if (offset > 0) {
         memcpy(current_env->local_vars, current_env->sp, offset);
+        current_env->sp += offset;
     }
 
     // 更新env中内容
     current_env->cur_frame = frame;
     // 更新控制栈
     current_env->control_stack->current_frame_index++;
-    current_env->control_stack->frames[
-    current_env->control_stack->current_frame_index] = frame;
+    current_env->control_stack->frames[current_env->control_stack->current_frame_index] = frame;
 
     // 区分处理内置函数和自定义函数
     if (func->is_import) {
