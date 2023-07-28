@@ -1151,7 +1151,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 float a = popF32();
                 float b = popF32();
-                pushF32(DIVIDE(float, b, a));
+                pushF32(b / a);
                 break;
             }
             case f32_min: {
@@ -1200,7 +1200,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 double a = popF64();
                 double b = popF64();
-                pushF64(DIVIDE(double, b, a));
+                pushF64(b / a);
                 break;
             }
             case f64_min: {
