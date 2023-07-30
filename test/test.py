@@ -19,7 +19,7 @@ def test_with_path(path, expected=None, returncode=0):
     #         print(f"FAIL: {path} failed memory leak test!")
 
     try:
-        actual = subprocess.check_output(
+        actual: str = subprocess.check_output(
             [BIN_PATH, path]).decode('utf-8').strip().replace('\r\n', '\n')
         if (actual == str(expected).strip().replace('\r\n', '\n')):
             # print(f"PASS: {path} passed!")
