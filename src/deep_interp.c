@@ -174,6 +174,7 @@ static void deep_native_call(const char *name, DEEPExecEnv *env, DEEPModule *mod
         for (unsigned i = 0; i < DEEPNATIVE_COUNT; i++) {
             if (!strcmp(name, g_DeepNativeMap[i].func_name)) {
                 uint8_t *sp = ((built_in_function)(g_DeepNativeMap[i].func))(env, module);
+                printf("sp=%p, env->sp=%p\n", sp, env->sp);
                 // env->sp = sp;
                 break;
             }
