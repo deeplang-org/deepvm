@@ -33,7 +33,7 @@ Description: head file of dump/debug funtions for logs
 extern "C" {
 #endif
 
-
+#define DEBUG
 void log_printf (const char* pFileName, unsigned int uiLine, const char* pFuncName, const char *pFlag, char *LogFmtBuf, ...);
 void log_data(const char *pFileName, unsigned int uiLine, const char* pFuncName, const char *pcStr,unsigned char *pucBuf,unsigned int usLen);
 #define deep_error(...)                             log_printf(__FILE__, __LINE__,__FUNCTION__,"<error>",__VA_ARGS__)
