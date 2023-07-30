@@ -35,7 +35,7 @@ def test_with_path(path, expected=None, returncode=0):
             print("PASS")
         else:
             total_failures += 1
-            print(f"FAIL: {path} failed with exit code {e.returncode}!")
+            print(f"FAIL: {path} failed with exit code {e.returncode}!\n{e}")
 
 
 test_with_path('math/add_float_0_-9.1201.wasm', 4294967287)
