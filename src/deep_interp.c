@@ -67,7 +67,7 @@ typedef struct {
 } DEEPNative;
 
 // 内置函数：输出字符串
-static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
+static uint8_t * native_puts(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     uint32_t offset = popU32();
     DEEPData *data;
@@ -88,6 +88,7 @@ static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
 
     printf("%s",(char *)data->data);
     pushU32(0);
+    return sp;
 }
 
 
@@ -174,8 +175,7 @@ static void deep_native_call(const char *name, DEEPExecEnv *env, DEEPModule *mod
         for (unsigned i = 0; i < DEEPNATIVE_COUNT; i++) {
             if (!strcmp(name, g_DeepNativeMap[i].func_name)) {
                 uint8_t *sp = ((built_in_function)(g_DeepNativeMap[i].func))(env, module);
-                printf("sp=%p, env->sp=%p\n", sp, env->sp);
-                // env->sp = sp;
+                env->sp = sp;
                 break;
             }
         }
