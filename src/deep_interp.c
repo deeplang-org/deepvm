@@ -41,7 +41,7 @@
 #define STACK_CAPACITY 800
 #define CONTROL_STACK_CAPACITY 100
 
-#define DEEPNATIVE_COUNT 5
+#define DEEPNATIVE_COUNT 9
 
 // 安全除法
 #define DIVIDE(TYPE, DIVIDEND, DIVISOR) \
@@ -53,23 +53,21 @@
     (deep_error("Arithmetic Error: Remainder by Zero!"), exit(1), 0), \
         (TYPE)DIVIDEND % (TYPE)DIVISOR)
 
-typedef void *(*fun_ptr_t)(void *);
-
-typedef void (*built_in_function)(DEEPExecEnv *env, DEEPModule *module);
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // 内置函数
 ////////////////////////////////////////////////////////////////////////////////
 
+typedef uint8_t *(*built_in_function)(DEEPExecEnv *env, DEEPModule *module);
+
 // DEEPLang内置函数
 typedef struct {
     char *func_name;
-    fun_ptr_t func;
+    built_in_function func;
 } DEEPNative;
 
 // 内置函数：输出字符串
-static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
+static uint8_t * native_puts(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     uint32_t offset = popU32();
     DEEPData *data;
@@ -89,45 +87,86 @@ static void native_puts(DEEPExecEnv *env, DEEPModule *module) {
     }
 
     printf("%s",(char *)data->data);
-    pushS32(0);
+    pushU32(0);
+    return sp;
 }
 
 
 // 内置函数：输出32位有符号整数
-static void native_puti(DEEPExecEnv *env, DEEPModule *module) {
+static uint8_t *native_puti(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     printf("%d", popS32());
-    pushS32(0);
+    pushU32(0);
+    return sp;
 }
 
 // 内置函数：输出32位浮点数
-static void native_putf(DEEPExecEnv *env, DEEPModule *module) {
+static uint8_t *native_putf(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     printf("%f", popF32());
-    pushS32(0);
+    pushU32(0);
+    return sp;
 }
 
 // 内置函数：输出64位有符号整数
-static void native_putl(DEEPExecEnv *env, DEEPModule *module) {
+static uint8_t *native_putl(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     printf("%lld", popS64());
-    pushS32(0);
+    pushU32(0);
+    return sp;
 }
 
 // 内置函数：输出64位浮点数
-static void native_putd(DEEPExecEnv *env, DEEPModule *module) {
+static uint8_t *native_putd(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
     printf("%lf", popF64());
-    pushS32(0);
+    pushU32(0);
+    return sp;
+}
+
+// 内置函数：isinf（32位浮点数）
+static uint8_t *native_isinff(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    float x = popF32();
+    pushU32(isinf(x));
+    return sp;
+}
+
+// 内置函数：isnan（32位浮点数）
+static uint8_t *native_isnanf(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    float x = popF32();
+    pushU32(isnan(x));
+    return sp;
+}
+
+// 内置函数：isinf（64位浮点数）
+static uint8_t *native_isinfd(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    double x = popF64();
+    pushU32(isinf(x));
+    return sp;
+}
+
+// 内置函数：isnan（64位浮点数）
+static uint8_t *native_isnand(DEEPExecEnv *env, DEEPModule *module) {
+    uint8_t *sp = env->cur_frame->sp;
+    double x = popF64();
+    pushU32(isnan(x));
+    return sp;
 }
 
 // 表：所有的built-in函数
 static DEEPNative g_DeepNativeMap[] = {
-    {"puts", (fun_ptr_t)native_puts},
-    {"puti", (fun_ptr_t)native_puti},
-    {"putf", (fun_ptr_t)native_putf},
-    {"putl", (fun_ptr_t)native_putl},
-    {"putd", (fun_ptr_t)native_putd}
+    {"puts", (built_in_function)native_puts},
+    {"puti", (built_in_function)native_puti},
+    {"putf", (built_in_function)native_putf},
+    {"putl", (built_in_function)native_putl},
+    {"putd", (built_in_function)native_putd},
+    {"isinff", (built_in_function)native_isinff},
+    {"isnanf", (built_in_function)native_isnanf},
+    {"isinfd", (built_in_function)native_isinfd},
+    {"isnand", (built_in_function)native_isnand}
 };
 
 // 内置函数调用
@@ -135,7 +174,8 @@ static void deep_native_call(const char *name, DEEPExecEnv *env, DEEPModule *mod
     //TODO: 用DEEPHash避免多次比较
         for (unsigned i = 0; i < DEEPNATIVE_COUNT; i++) {
             if (!strcmp(name, g_DeepNativeMap[i].func_name)) {
-                ((built_in_function)(g_DeepNativeMap[i].func))(env, module);
+                uint8_t *sp = ((built_in_function)(g_DeepNativeMap[i].func))(env, module);
+                env->sp = sp;
                 break;
             }
         }
@@ -1151,7 +1191,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 float a = popF32();
                 float b = popF32();
-                pushF32(DIVIDE(float, b, a));
+                pushF32(b / a);
                 break;
             }
             case f32_min: {
@@ -1200,7 +1240,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 double a = popF64();
                 double b = popF64();
-                pushF64(DIVIDE(double, b, a));
+                pushF64(b / a);
                 break;
             }
             case f64_min: {
@@ -1548,14 +1588,14 @@ void call_function(DEEPExecEnv *current_env, DEEPModule *module, int func_index)
     }
     if (offset > 0) {
         memcpy(current_env->local_vars, current_env->sp, offset);
+        current_env->sp += offset;
     }
 
     // 更新env中内容
     current_env->cur_frame = frame;
     // 更新控制栈
     current_env->control_stack->current_frame_index++;
-    current_env->control_stack->frames[
-    current_env->control_stack->current_frame_index] = frame;
+    current_env->control_stack->frames[current_env->control_stack->current_frame_index] = frame;
 
     // 区分处理内置函数和自定义函数
     if (func->is_import) {
