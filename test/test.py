@@ -130,8 +130,8 @@ test_with_path('control/if/if_32_3.wasm', 20)
 test_with_path('control/if/if_64_3.wasm', 20)
 test_with_path('control/if/if_32_4.wasm', 10)
 test_with_path('control/if/if_64_4.wasm', 10)
-test_with_path('control/if/if_32_5.wasm', -1)
-test_with_path('control/if/if_64_5.wasm', -1)
+test_with_path('control/if/if_32_5.wasm', 4294967295)
+test_with_path('control/if/if_64_5.wasm', 4294967295)
 
 test_with_path('control/loop/for_32_1.wasm', 45)
 test_with_path('control/loop/for_64_1.wasm', 45)
@@ -145,6 +145,23 @@ test_with_path('control/loop/for_32_7.wasm', 323401)
 
 test_with_path('control/loop/while_32_1.wasm', 330)
 test_with_path('control/loop/while_64_1.wasm', 330)
+
+test_with_path('control/break/break_32_1.wasm', 325)
+test_with_path('control/break/break_64_1.wasm', 325)
+test_with_path('control/break/break_32_2.wasm', 325)
+test_with_path('control/break/break_64_2.wasm', 325)
+test_with_path('control/break/continue_32_1.wasm', 632)
+test_with_path('control/break/continue_64_1.wasm', 632)
+test_with_path('control/break/continue_32_2.wasm', 632)
+test_with_path('control/break/continue_64_2.wasm', 632)
+
+test_with_path('control/switch/switch_case_32_1.wasm', 55)
+test_with_path('control/switch/switch_case_64_1.wasm', 55)
+test_with_path('control/switch/switch_case_32_2.wasm', 100)
+test_with_path('control/switch/switch_case_64_2.wasm', 100)
+test_with_path('control/switch/switch_case_32_3.wasm', 0)
+test_with_path('control/switch/switch_case_64_3.wasm', 0)
+
 # break continue 
 # switch case
 # jump table
