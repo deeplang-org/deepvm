@@ -1,6 +1,7 @@
 import platform
 import subprocess
-import platform
+import os
+import tempfile
 
 sys = platform.system()
 BIN_PATH = '../bin/deepvm.exe' if sys == 'Windows' else '../bin/deepvm'
@@ -36,6 +37,40 @@ def test_with_path(path, expected=None, returncode=0):
         else:
             total_failures += 1
             print(f"FAIL: {path} failed with exit code {e.returncode}!\n{e}")
+
+
+def test_with_wat(name, expected=None, returncode=0):
+    """把 test/wat/name 汇编为临时 .wasm 再运行并断言输出。"""
+    global total_failures
+    wat_path = os.path.join('wat', name)
+    wasm_path = os.path.join(
+        tempfile.gettempdir(),
+        'deepvm_' + name.replace('.', '_').replace('/', '_') + '.wasm')
+
+    try:
+        subprocess.check_call(
+            [BIN_PATH, '-o', wasm_path, wat_path],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        total_failures += 1
+        print(f"FAIL: {name} assemble failed!")
+        return
+
+    try:
+        actual = subprocess.check_output(
+            [BIN_PATH, wasm_path]).decode('utf-8').strip().replace('\r\n', '\n')
+        if (actual == str(expected).strip().replace('\r\n', '\n')):
+            print("PASS")
+        else:
+            total_failures += 1
+            print(
+                f"FAIL: {name} failed! Expecting {expected} but getting {actual}")
+    except subprocess.CalledProcessError as e:
+        if (returncode == e.returncode):
+            print("PASS")
+        else:
+            total_failures += 1
+            print(f"FAIL: {name} failed with exit code {e.returncode}!\n{e}")
 
 
 test_with_path('math/add_float_0_-9.1201.wasm', 4294967287)
@@ -224,6 +259,18 @@ test_with_path('table/call_indirect_oob_001.wasm', returncode=1)
 
 # start/（Start section：main 前先执行起始函数）
 test_with_path('start/set_global.wasm', 99)
+
+# wat/（WAT 文本汇编为 wasm 再运行，覆盖折叠/平铺及各类 section）
+test_with_wat('add_folded.wat', 3)
+test_with_wat('mul_flat.wat', 35)
+test_with_wat('puts_string.wat', 'hello deeplang\n0')
+test_with_wat('if_else.wat', 100)
+test_with_wat('global_get.wat', 42)
+test_with_wat('memory_store_load.wat', 99)
+test_with_wat('call_indirect.wat', 42)
+test_with_wat('start_section.wat', 5)
+test_with_wat('loop_sum.wat', 55)
+test_with_wat('i64_const.wat', 1)
 
 if total_failures > 0:
     print(f"Total {total_failures} tests failed!")
