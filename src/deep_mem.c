@@ -161,6 +161,8 @@ bool deep_mem_init (void *mem, uint32_t size)
   // initialise remainder block's head
   block_set_A_flag (pool->remainder_block_head, false);
   block_set_P_flag (pool->remainder_block_head, true);
+  block_set_size (pool->remainder_block_head,
+                  get_remainder_size(pool) - block_payload_offset);
   PRINT_ARG("Free memory (start):     %llu\n", pool->free_memory);
   return true;
 }
@@ -223,6 +225,13 @@ deep_malloc_fast_bins(block_size_t aligned_size)
         (pool->remainder_block_end,
         -(int64_t)aligned_size - sizeof(block_head_t)));
     pool->remainder_block_end = (void *)ret;
+
+    /* carving a fast block out of the top of the remainder shrinks the
+     * remainder; keep the remainder head's size in sync so a later merge
+     * does not over-merge into blocks carved above it. */
+    block_set_size (pool->remainder_block_head,
+                    block_get_size (pool->remainder_block_head)
+                    - aligned_size - sizeof (block_head_t));
 
     payload_size = aligned_size - block_payload_offset;
     block_set_size (&ret->head, payload_size);
@@ -338,9 +347,9 @@ deep_free_fast_bins(void *ptr)
   memset (&block->payload, 0, payload_size);
   block_set_A_flag (&block->head, false);
   pool->free_memory += payload_size;
-  if (pool->fast_bins[offset].addr != NULL) 
+  if (pool->fast_bins[offset].addr != NULL)
   {
-    block->payload.next = pool->fast_bins[offset].addr->payload.next;
+    block->payload.next = pool->fast_bins[offset].addr;
   }
   pool->fast_bins[offset].addr = block;
 

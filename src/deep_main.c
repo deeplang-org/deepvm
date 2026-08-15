@@ -77,6 +77,28 @@ int32_t main(int argv, char **args) {
     for (uint32_t i = 0; i < module->global_count; i++) {
         current_env->global_vars[i] = module->global_section[i]->init_value;
     }
+
+    // 函数表：按 Table/Elem section 初始化（call_indirect 使用）
+    current_env->table = NULL;
+    current_env->table_size = 0;
+    if (module->table != NULL && module->table_count > 0) {
+        current_env->table_size = module->table->min;
+        current_env->table = (uint32_t *) deep_malloc(current_env->table_size * sizeof(uint32_t));
+        for (uint32_t i = 0; i < current_env->table_size; i++) {
+            current_env->table[i] = UINT32_MAX; // 未初始化哨兵
+        }
+        // 应用 elem 段
+        for (uint32_t i = 0; i < module->elem_count; i++) {
+            DEEPElem *e = module->elem_section[i];
+            for (uint32_t j = 0; j < e->func_count; j++) {
+                uint32_t idx = e->offset + j;
+                if (idx < current_env->table_size) {
+                    current_env->table[idx] = e->func_indices[j];
+                }
+            }
+        }
+    }
+
     current_env->control_stack = control_stack;
     current_env->jump_depth = 0;
     int64_t ans = call_main(current_env, module);
@@ -91,6 +113,7 @@ int32_t main(int argv, char **args) {
     module_free(module);
     deep_free(current_env->global_vars);
     deep_free(current_env->memory);
+    deep_free(current_env->table);
     deep_free(q);
     p = NULL;
 

@@ -399,6 +399,12 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case op_select:
             ip++;
             break;
+        // call_indirect：type index (leb) + reserved byte (0x00)
+        case op_call_indirect:
+            ip++;
+            read_leb_u32(&ip);
+            ip++;
+            break;
         // 需要一个leb立即数的指令：
         case op_call:
         case op_local_get:
@@ -623,6 +629,28 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 ip++;
                 uint32_t func_index = read_leb_u32(&ip);//被调用函数index
                 //需要一个同步操作
+                current_env->sp = sp;
+                call_function(current_env, module, func_index);
+                sp = current_env->sp;
+                break;
+            }
+            case op_call_indirect: {
+                ip++;
+                uint32_t type_index = read_leb_u32(&ip); // 函数类型索引（MVP 不校验）
+                uint8_t reserved = READ_BYTE(ip);        // MVP 恒为 0x00
+                ip++;
+                (void)type_index;
+                (void)reserved;
+                uint32_t elem_index = popU32();           // 表元素索引
+                if (current_env->table == NULL || elem_index >= current_env->table_size) {
+                    deep_error("Runtime Error: undefined element / out of bounds table access!");
+                    exit(1);
+                }
+                uint32_t func_index = current_env->table[elem_index];
+                if (func_index == UINT32_MAX) {
+                    deep_error("Runtime Error: uninitialized table element!");
+                    exit(1);
+                }
                 current_env->sp = sp;
                 call_function(current_env, module, func_index);
                 sp = current_env->sp;

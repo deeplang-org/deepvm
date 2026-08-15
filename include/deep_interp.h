@@ -104,6 +104,8 @@ typedef struct DEEPExecEnv {
     uint64_t *global_vars;
     uint8_t *memory;
     uint32_t memory_pages; // 当前线性内存页数（每页 64KB）
+    uint32_t *table;       // 函数表（call_indirect 使用），元素为函数索引
+    uint32_t table_size;   // 函数表容量
     DEEPControlStack *control_stack;
     int jump_depth;
 } DEEPExecEnv;

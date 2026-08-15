@@ -30,6 +30,8 @@ const char *printDEEPOpcode(uint32_t opcode) {
         return "return";
     case op_call:
         return "call";
+    case op_call_indirect:
+        return "call_indirect";
     case op_drop:
         return "drop";
     case op_select:

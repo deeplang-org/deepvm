@@ -30,6 +30,7 @@ enum DEEPOpcode {
     op_br_table = 0x0E,
     op_return = 0x0F,
     op_call = 0x10,
+    op_call_indirect = 0x11,
     //变量指令
     op_local_get = 0x20,
     op_local_set = 0x21,

@@ -148,6 +148,32 @@ typedef struct DEEPMemory
 } DEEPMemory;
 
 /**
+ * @brief items of table section
+ *
+ * MVP 下最多一张表，元素类型恒为 funcref(0x70)。
+ */
+typedef struct DEEPTable
+{
+    uint8_t element_type;
+    uint32_t min;
+    uint32_t max;         // 0 表示无上限
+    bool has_max;
+} DEEPTable;
+
+/**
+ * @brief items of elem section
+ *
+ * 记录表的初始内容：从 offset 开始的 func_count 个函数索引。
+ */
+typedef struct DEEPElem
+{
+    uint32_t table_index; // MVP 恒为 0
+    uint32_t offset;
+    uint32_t func_count;
+    uint32_t *func_indices;
+} DEEPElem;
+
+/**
  * @brief Data structure of module. We only support 5 sections which can make the program run.
  *
  */
@@ -166,6 +192,8 @@ typedef struct DEEPModule
     uint32_t global_count;
     uint32_t start_index; // Start section 中的起始函数索引
     bool has_start;       // 是否存在 Start section
+    uint32_t table_count;
+    uint32_t elem_count;
     DEEPType **type_section;
     DEEPFunction **func_section;
     DEEPExport **export_section;
@@ -173,6 +201,8 @@ typedef struct DEEPModule
     DEEPData **data_section;
     DEEPGlobal **global_section;
     DEEPMemory *memory;
+    DEEPTable *table;
+    DEEPElem **elem_section;
 } DEEPModule;
 
 /**

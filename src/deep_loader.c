@@ -515,6 +515,62 @@ static void decode_start_section(const uint8_t* p, DEEPModule* module) {
 }
 
 /**
+ * @brief read table section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_table_section(const uint8_t* p, DEEPModule* module) {
+    uint32_t table_count = read_leb_u32((uint8_t**)&p);
+    module->table_count = table_count;
+    if (table_count == 0) {
+        return;
+    }
+    // MVP 下最多一张表
+    module->table = (DEEPTable*)deep_malloc(sizeof(DEEPTable));
+    module->table->element_type = READ_BYTE(p);
+    uint8_t flags = READ_BYTE(p);
+    module->table->min = read_leb_u32((uint8_t**)&p);
+    module->table->has_max = (flags & 0x01) != 0;
+    module->table->max = module->table->has_max ? read_leb_u32((uint8_t**)&p) : 0;
+}
+
+/**
+ * @brief read elem section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_elem_section(const uint8_t* p, DEEPModule* module) {
+    uint32_t elem_count = read_leb_u32((uint8_t**)&p);
+    module->elem_count = elem_count;
+    module->elem_section = (DEEPElem**)deep_malloc(elem_count * sizeof(DEEPElem*));
+
+    for (uint32_t i = 0; i < elem_count; i++) {
+        DEEPElem* e = module->elem_section[i] = (DEEPElem*)deep_malloc(sizeof(DEEPElem));
+        e->table_index = read_leb_u32((uint8_t**)&p); // MVP 恒为 0
+
+        // offset expr：MVP 下仅允许 i32.const 常量偏移，末尾以 0x0B 结束
+        uint8_t op = READ_BYTE(p);
+        if (op == i32_const) {
+            e->offset = (uint32_t)(int32_t)read_leb_i32((uint8_t**)&p);
+        } else {
+            e->offset = 0;
+        }
+        uint8_t end = READ_BYTE(p);
+        if (end != op_end) {
+            deep_error("elem offset expr is not terminated by end!");
+        }
+
+        e->func_count = read_leb_u32((uint8_t**)&p);
+        e->func_indices = (uint32_t*)deep_malloc(e->func_count * sizeof(uint32_t));
+        for (uint32_t j = 0; j < e->func_count; j++) {
+            e->func_indices[j] = read_leb_u32((uint8_t**)&p);
+        }
+    }
+}
+
+/**
  * @brief read memory section
  *
  * @param p
@@ -563,7 +619,7 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
             decode_func_section(buf, module, p_code);
             break;
         case SECTION_TYPE_TABLE:
-
+            decode_table_section(buf, module);
             break;
         case SECTION_TYPE_MEMORY:
             decode_memory_section(buf, module);
@@ -578,7 +634,7 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
             decode_start_section(buf, module);
             break;
         case SECTION_TYPE_ELEM:
-
+            decode_elem_section(buf, module);
             break;
         case SECTION_TYPE_CODE:
 
@@ -661,7 +717,14 @@ void module_free(DEEPModule *module) {
     }
     deep_free(module->global_section);
 
+    for (i = 0; i < module->elem_count; i++) {
+        deep_free(module->elem_section[i]->func_indices);
+        deep_free(module->elem_section[i]);
+    }
+    deep_free(module->elem_section);
+
     deep_free(module->memory);
+    deep_free(module->table);
 
     deep_free(module);
 }
