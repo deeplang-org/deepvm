@@ -562,6 +562,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 //block的局部变量和当前function的一致
                 block->local_var_types = current_env->cur_frame->function->local_var_types;
                 block->local_var_count = current_env->cur_frame->function->local_var_count;
+                block->local_var_offsets = current_env->cur_frame->function->local_var_offsets;
                 //执行block
                 block->func_type = type;
                 current_env->sp = sp;
@@ -637,8 +638,7 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             case op_call_indirect: {
                 ip++;
                 uint32_t type_index = read_leb_u32(&ip); // 函数类型索引（MVP 不校验）
-                uint8_t reserved = READ_BYTE(ip);        // MVP 恒为 0x00
-                ip++;
+                uint8_t reserved = READ_BYTE(ip);        // MVP 恒为 0x00（READ_BYTE 已前移 ip）
                 (void)type_index;
                 (void)reserved;
                 uint32_t elem_index = popU32();           // 表元素索引
