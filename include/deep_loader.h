@@ -123,6 +123,31 @@ typedef struct DEEPData
 } DEEPData;
 
 /**
+ * @brief items of global section
+ *
+ * 存储每个全局变量的类型、可变性以及初始值（以原始比特位形式存于 uint64_t 中，
+ * 实际占用字节数由 type 决定）。
+ */
+typedef struct DEEPGlobal
+{
+    uint8_t type;         // type_i32/type_i64/type_f32/type_f64
+    bool is_mutable;      // 0x00 const / 0x01 var
+    uint64_t init_value;  // 初始值（原始比特位）
+} DEEPGlobal;
+
+/**
+ * @brief items of memory section
+ *
+ * 记录线性内存的最小/最大页数（每页 64KB）。
+ */
+typedef struct DEEPMemory
+{
+    uint32_t min_pages;
+    uint32_t max_pages;   // 0 表示无上限（MVP 通常为 0xFFFFFFFF 或未指定）
+    bool has_max;
+} DEEPMemory;
+
+/**
  * @brief Data structure of module. We only support 5 sections which can make the program run.
  *
  */
@@ -138,11 +163,14 @@ typedef struct DEEPModule
     uint32_t import_memory_count;
     uint32_t import_global_count;
     uint32_t data_count;
+    uint32_t global_count;
     DEEPType **type_section;
     DEEPFunction **func_section;
     DEEPExport **export_section;
     DEEPImport **import_section;
     DEEPData **data_section;
+    DEEPGlobal **global_section;
+    DEEPMemory *memory;
 } DEEPModule;
 
 /**

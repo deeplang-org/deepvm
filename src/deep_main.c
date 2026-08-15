@@ -63,9 +63,20 @@ int32_t main(int argv, char **args) {
     DEEPExecEnv *current_env = &deep_env;
     current_env->sp_end = stack->sp_end;
     current_env->sp = stack->sp;
-    current_env->global_vars = (uint64_t *) deep_malloc(sizeof(uint64_t) * GLOBAL_VAR_COUNT);
-    current_env->memory = init_memory(1);
-    current_env->memory_pages = 1;
+    // 线性内存：按 Memory section 的最小页数初始化（无该 section 时默认 1 页）
+    uint32_t min_pages = 1;
+    if (module->memory != NULL && module->memory->min_pages > 0) {
+        min_pages = module->memory->min_pages;
+    }
+    current_env->memory = init_memory(min_pages);
+    current_env->memory_pages = min_pages;
+
+    // 全局变量：按 Global section 初始化（每个全局变量占 8 字节，值存于低字节）
+    uint32_t global_bytes = module->global_count * sizeof(uint64_t);
+    current_env->global_vars = (uint64_t *) deep_malloc(global_bytes > 0 ? global_bytes : sizeof(uint64_t));
+    for (uint32_t i = 0; i < module->global_count; i++) {
+        current_env->global_vars[i] = module->global_section[i]->init_value;
+    }
     current_env->control_stack = control_stack;
     current_env->jump_depth = 0;
     int64_t ans = call_main(current_env, module);

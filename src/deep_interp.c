@@ -898,14 +898,23 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             case op_global_get: {
                 ip++;
                 uint32_t index = read_leb_u32(&ip); //global_get指令的立即数
-                uint64_t a = current_env->global_vars[index];
-                pushU64(a);
+                uint8_t gtype = module->global_section[index]->type;
+                if (gtype == type_i64 || gtype == type_f64) {
+                    pushU64(current_env->global_vars[index]);
+                } else {
+                    pushU32((uint32_t)current_env->global_vars[index]);
+                }
                 break;
             }
             case op_global_set: {
                 ip++;
                 uint32_t index = read_leb_u32(&ip); //global_set指令的立即数
-                current_env->global_vars[index] = popU64();
+                uint8_t gtype = module->global_section[index]->type;
+                if (gtype == type_i64 || gtype == type_f64) {
+                    current_env->global_vars[index] = popU64();
+                } else {
+                    current_env->global_vars[index] = (uint32_t)popU32();
+                }
                 break;
             }
             /* 比较指令 */

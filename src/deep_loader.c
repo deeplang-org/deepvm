@@ -447,6 +447,82 @@ static void decode_data_section(const uint8_t* p, DEEPModule* module) {
 }
 
 /**
+ * @brief read global section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_global_section(const uint8_t* p, DEEPModule* module) {
+    uint32_t global_count = read_leb_u32((uint8_t**)&p);
+    module->global_count = global_count;
+    module->global_section = (DEEPGlobal**)deep_malloc(global_count * sizeof(DEEPGlobal*));
+
+    for (uint32_t i = 0; i < global_count; i++) {
+        DEEPGlobal* g = module->global_section[i] = (DEEPGlobal*)deep_malloc(sizeof(DEEPGlobal));
+        g->type = READ_BYTE(p);
+        g->is_mutable = (READ_BYTE(p) == 0x01);
+
+        // init_expr：MVP 下仅支持 const 与 global.get，末尾以 0x0B 结束
+        uint8_t op = READ_BYTE(p);
+        switch (op) {
+        case i32_const:
+            g->init_value = (uint64_t)(uint32_t)(int32_t)read_leb_i32((uint8_t**)&p);
+            break;
+        case i64_const:
+            g->init_value = (uint64_t)read_leb_i64((uint8_t**)&p);
+            break;
+        case f32_const: {
+            uint32_t v;
+            memcpy(&v, p, 4);
+            p += 4;
+            g->init_value = v;
+            break;
+        }
+        case f64_const: {
+            uint64_t v;
+            memcpy(&v, p, 8);
+            p += 8;
+            g->init_value = v;
+            break;
+        }
+        case op_global_get:
+            // 引用其它（通常是导入的）全局变量，此处暂不支持，初始值置 0
+            read_leb_u32((uint8_t**)&p);
+            g->init_value = 0;
+            break;
+        default:
+            deep_error("unsupported global init expr opcode 0x%x!", op);
+            break;
+        }
+
+        // init_expr 以 end(0x0B) 结束
+        uint8_t end = READ_BYTE(p);
+        if (end != op_end) {
+            deep_error("global init expr is not terminated by end!");
+        }
+    }
+}
+
+/**
+ * @brief read memory section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_memory_section(const uint8_t* p, DEEPModule* module) {
+    uint32_t memory_count = read_leb_u32((uint8_t**)&p);
+    if (memory_count == 0) {
+        return;
+    }
+    // MVP 下最多 1 块内存
+    module->memory = (DEEPMemory*)deep_malloc(sizeof(DEEPMemory));
+    uint8_t flags = READ_BYTE(p);
+    module->memory->min_pages = read_leb_u32((uint8_t**)&p);
+    module->memory->has_max = (flags & 0x01) != 0;
+    module->memory->max_pages = module->memory->has_max ? read_leb_u32((uint8_t**)&p) : 0;
+}
+
+/**
  * @brief load sections one by one.
  *
  * @param module
@@ -479,10 +555,10 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
 
             break;
         case SECTION_TYPE_MEMORY:
-
+            decode_memory_section(buf, module);
             break;
         case SECTION_TYPE_GLOBAL:
-
+            decode_global_section(buf, module);
             break;
         case SECTION_TYPE_EXPORT:
             decode_export_section(buf, module);
@@ -568,6 +644,13 @@ void module_free(DEEPModule *module) {
         deep_free(module->import_section[i]);
     }
     deep_free(module->import_section);
+
+    for (i = 0; i < module->global_count; i++) {
+        deep_free(module->global_section[i]);
+    }
+    deep_free(module->global_section);
+
+    deep_free(module->memory);
 
     deep_free(module);
 }
