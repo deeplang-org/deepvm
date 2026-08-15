@@ -72,15 +72,18 @@ uint32_t read_leb_u32(uint8_t** p) {
  */
 int32_t read_leb_i32(uint8_t** p) {
     uint8_t* buf = *p;
-    int32_t res = 0;
+    uint32_t res = 0;
+    uint32_t shift = 0;
     for (int32_t i = 0; i < 5; i++) {
-        res |= (uint32_t)(buf[i] & 0x7f) << (i * 7);
-        if ((buf[i] & 0x80) == 0) {
+        uint32_t byte = buf[i];
+        res |= (byte & 0x7f) << shift;
+        shift += 7;
+        if ((byte & 0x80) == 0) {
             *p += i + 1;
-            if(i * 7 < (sizeof(int32_t) * 8) && (buf[i] & 0x40) != 0) {
-                res = res | -((uint32_t)1 << ((i + 1) * 7));
+            if (shift < 32 && (byte & 0x40) != 0) {
+                res |= ~0U << shift;
             }
-            return res;
+            return (int32_t)res;
         }
     }
     return 0;
@@ -113,15 +116,18 @@ uint64_t read_leb_u64(uint8_t** p) {
  */
 int64_t read_leb_i64(uint8_t** p) {
     uint8_t* buf = *p;
-    int64_t res = 0;
+    uint64_t res = 0;
+    uint32_t shift = 0;
     for (int64_t i = 0; i < 10; i++) {
-        res |= (uint64_t)(buf[i] & 0x7f) << (i * 7);
-        if ((buf[i] & 0x80) == 0) {
+        uint64_t byte = buf[i];
+        res |= (byte & 0x7f) << shift;
+        shift += 7;
+        if ((byte & 0x80) == 0) {
             *p += i + 1;
-            if(i * 7 < (sizeof(int64_t) * 8) && (buf[i] & 0x40) != 0) {
-                res = res | -((uint64_t)1 << ((i + 1) * 7));
+            if (shift < 64 && (byte & 0x40) != 0) {
+                res |= ~0ULL << shift;
             }
-            return res;
+            return (int64_t)res;
         }
     }
     return 0;

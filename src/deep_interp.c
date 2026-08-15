@@ -1159,11 +1159,43 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushU32(b >> a);
                 break;
             }
+            case i32_rotl: {
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                uint32_t n = a % 32;
+                pushU32((b << n) | (b >> ((32 - n) & 31)));
+                break;
+            }
+            case i32_rotr: {
+                ip++;
+                uint32_t a = popU32();
+                uint32_t b = popU32();
+                uint32_t n = a % 32;
+                pushU32((b >> n) | (b << ((32 - n) & 31)));
+                break;
+            }
             case i64_shru: {
                 ip++;
                 uint64_t a = popU64();
                 uint64_t b = popU64();
                 pushU64(b >> a);
+                break;
+            }
+            case i64_rotl: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                uint64_t n = a % 64;
+                pushU64((b << n) | (b >> ((64 - n) & 63)));
+                break;
+            }
+            case i64_rotr: {
+                ip++;
+                uint64_t a = popU64();
+                uint64_t b = popU64();
+                uint64_t n = a % 64;
+                pushU64((b >> n) | (b << ((64 - n) & 63)));
                 break;
             }
             case f32_add: {
@@ -1281,138 +1313,160 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
             // 一元算数
             case i32_clz: {
                 ip++;
-                int32_t a = popS32();
+                uint32_t a = popU32();
                 // 需要确保调用的builtin处理的是32位
                 #if __SIZEOF_INT__ == 4
-                pushS32(__builtin_clz(a));
+                pushS32(a == 0 ? 32 : __builtin_clz(a));
                 #else
-                pushS32(__builtin_clzl(a));
+                pushS32(a == 0 ? 32 : __builtin_clzl(a));
                 #endif
+                break;
             }
             case i32_ctz: {
                 ip++;
-                int32_t a = popS32();
+                uint32_t a = popU32();
                 // 需要确保调用的builtin处理的是32位
                 #if __SIZEOF_INT__ == 4
-                pushS32(__builtin_ctz(a));
+                pushS32(a == 0 ? 32 : __builtin_ctz(a));
                 #else
-                pushS32(__builtin_ctzl(a));
+                pushS32(a == 0 ? 32 : __builtin_ctzl(a));
                 #endif
+                break;
             }
             case i32_popcnt: {
                 ip++;
-                int64_t a = popS64();
+                uint32_t a = popU32();
                 // 需要确保调用的builtin处理的是32位
                 #if __SIZEOF_INT__ == 4
                 pushS32(__builtin_popcount(a));
                 #else
                 pushS32(__builtin_popcountl(a));
                 #endif
+                break;
             }
             case i64_clz: {
                 ip++;
-                int32_t a = popS32();
+                uint64_t a = popU64();
                 // 需要确保调用的builtin处理的是64位
                 #if __SIZEOF_LONG__ == 8
-                pushS64(__builtin_clzl(a));
+                pushS64(a == 0 ? 64 : __builtin_clzl(a));
                 #else
-                pushS64(__builtin_clzll(a));
+                pushS64(a == 0 ? 64 : __builtin_clzll(a));
                 #endif
+                break;
             }
             case i64_ctz: {
                 ip++;
-                int64_t a = popS64();
+                uint64_t a = popU64();
                 // 需要确保调用的builtin处理的是64位
                 #if __SIZEOF_LONG__ == 8
-                pushS64(__builtin_ctzl(a));
+                pushS64(a == 0 ? 64 : __builtin_ctzl(a));
                 #else
-                pushS64(__builtin_ctzll(a));
+                pushS64(a == 0 ? 64 : __builtin_ctzll(a));
                 #endif
+                break;
             }
             case i64_popcnt: {
                 ip++;
-                int64_t a = popS64();
+                uint64_t a = popU64();
                 // 需要确保调用的builtin处理的是64位
                 #if __SIZEOF_LONG__ == 8
                 pushS64(__builtin_popcountl(a));
                 #else
                 pushS64(__builtin_popcountll(a));
                 #endif
+                break;
             }
             case f32_abs: {
                 ip++;
                 float a = popF32();
                 pushF32(fabsf(a));
+                break;
             }
             case f32_neg: {
                 ip++;
                 float a = popF32();
                 pushF32(-a);
+                break;
             }
             case f32_ceil: {
                 ip++;
                 float a = popF32();
                 pushF32(ceilf(a));
+                break;
             }
             case f32_floor: {
                 ip++;
                 float a = popF32();
                 pushF32(floorf(a));
+                break;
             }
             case f32_trunc: {
                 ip++;
                 float a = popF32();
                 pushF32(truncf(a));
+                break;
             }
             case f32_nearest: {
                 ip++;
                 float a = popF32();
                 pushF32(roundf(a));
+                break;
             }
             case f32_sqrt: {
                 ip++;
                 float a = popF32();
                 pushF32(sqrtf(a));
+                break;
             }
             case f64_abs: {
                 ip++;
                 double a = popF64();
                 pushF64(fabs(a));
+                break;
             }
             case f64_neg: {
                 ip++;
                 double a = popF64();
                 pushF64(-a);
+                break;
             }
             case f64_ceil: {
                 ip++;
                 double a = popF64();
                 pushF64(ceil(a));
+                break;
             }
             case f64_floor: {
                 ip++;
                 double a = popF64();
                 pushF64(floor(a));
+                break;
             }
             case f64_trunc: {
                 ip++;
                 double a = popF64();
                 pushF64(trunc(a));
+                break;
             }
             case f64_nearest: {
                 ip++;
                 double a = popF64();
                 pushF64(round(a));
+                break;
             }
             case f64_sqrt: {
                 ip++;
                 double a = popF64();
                 pushF64(sqrt(a));
+                break;
             }
             // 类型转换
             case i32_wrap_i64: {
-                int32_t temp = (int64_t)popS64();
+                ip++;
+                int32_t temp = (int32_t)popS64();
                 pushS32(temp);
+                break;
             }
             case i32_trunc_f32_s: {
                 ip++;
@@ -1439,12 +1493,16 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 break;
             }
             case i64_extend_i32_s: {
+                ip++;
                 int64_t temp = (int64_t)popS32();
                 pushS64(temp);
+                break;
             }
             case i64_extend_i32_u: {
+                ip++;
                 uint64_t temp = (uint64_t)popU32();
                 pushU64(temp);
+                break;
             }
             case i64_trunc_f32_s: {
                 ip++;
