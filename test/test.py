@@ -11,41 +11,37 @@ total_failures = 0
 
 def test_with_path(path, expected=None, returncode=0):
     global total_failures
-    # # Check memory leak using "leaks" on Apple Chip
-    # if (platform.system() == 'Darwin' and platform.processor() == 'arm'):
-    #     try:
-    #         subprocess.check_call(
-    #             ['leaks', '--atExit', '--', '../bin/deepvm', path], stdout=subprocess.DEVNULL)
-    #     except subprocess.CalledProcessError as e:
-    #         print(f"FAIL: {path} failed memory leak test!")
-
+    ok = True
     try:
         actual = subprocess.check_output(
             [BIN_PATH, path]).decode('utf-8').strip().replace('\r\n', '\n')
         if (actual == str(expected).strip().replace('\r\n', '\n')):
-            # print(f"PASS: {path} passed!")
             print("PASS")
         else:
             total_failures += 1
+            ok = False
             print(
                 f"FAIL: {path} failed! Expecting {expected} but getting {actual}")
     except subprocess.CalledProcessError as e:
         if (returncode == e.returncode):
-            # print(
-            #     f"PASS: {path} passed with the expected exit code {returncode}!")
             print("PASS")
         else:
             total_failures += 1
+            ok = False
             print(f"FAIL: {path} failed with exit code {e.returncode}!\n{e}")
+    # 每个 .wasm 用例都有一个同名的 .wat：汇编后运行，断言结果一致
+    if ok and path.endswith('.wasm'):
+        wat_path = path[:-5] + '.wat'
+        if os.path.exists(wat_path):
+            test_with_wat(wat_path, expected, returncode)
 
 
-def test_with_wat(name, expected=None, returncode=0):
-    """把 test/wat/name 汇编为临时 .wasm 再运行并断言输出。"""
+def test_with_wat(wat_path, expected=None, returncode=0):
+    """把 wat_path 汇编为临时 .wasm 再运行并断言输出。"""
     global total_failures
-    wat_path = os.path.join('wat', name)
     wasm_path = os.path.join(
         tempfile.gettempdir(),
-        'deepvm_' + name.replace('.', '_').replace('/', '_') + '.wasm')
+        'deepvm_' + wat_path.replace('.', '_').replace('/', '_').replace('\\', '_') + '.wasm')
 
     try:
         subprocess.check_call(
@@ -53,7 +49,7 @@ def test_with_wat(name, expected=None, returncode=0):
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
         total_failures += 1
-        print(f"FAIL: {name} assemble failed!")
+        print(f"FAIL: {wat_path} assemble failed!")
         return
 
     try:
@@ -64,13 +60,13 @@ def test_with_wat(name, expected=None, returncode=0):
         else:
             total_failures += 1
             print(
-                f"FAIL: {name} failed! Expecting {expected} but getting {actual}")
+                f"FAIL: {wat_path} failed! Expecting {expected} but getting {actual}")
     except subprocess.CalledProcessError as e:
         if (returncode == e.returncode):
             print("PASS")
         else:
             total_failures += 1
-            print(f"FAIL: {name} failed with exit code {e.returncode}!\n{e}")
+            print(f"FAIL: {wat_path} failed with exit code {e.returncode}!\n{e}")
 
 
 test_with_path('math/add_float_0_-9.1201.wasm', 4294967287)
@@ -260,17 +256,17 @@ test_with_path('table/call_indirect_oob_001.wasm', returncode=1)
 # start/（Start section：main 前先执行起始函数）
 test_with_path('start/set_global.wasm', 99)
 
-# wat/（WAT 文本汇编为 wasm 再运行，覆盖折叠/平铺及各类 section）
-test_with_wat('add_folded.wat', 3)
-test_with_wat('mul_flat.wat', 35)
-test_with_wat('puts_string.wat', 'hello deeplang\n0')
-test_with_wat('if_else.wat', 100)
-test_with_wat('global_get.wat', 42)
-test_with_wat('memory_store_load.wat', 99)
-test_with_wat('call_indirect.wat', 42)
-test_with_wat('start_section.wat', 5)
-test_with_wat('loop_sum.wat', 55)
-test_with_wat('i64_const.wat', 1)
+# WAT 专属用例（折叠/平铺语法、start/elem 等，无对应 .wasm；分散到各分类目录）
+test_with_wat('math/add_folded.wat', 3)
+test_with_wat('math/mul_flat.wat', 35)
+test_with_wat('builtin/puts_string.wat', 'hello deeplang\n0')
+test_with_wat('control/if_else.wat', 100)
+test_with_wat('global/global_get.wat', 42)
+test_with_wat('memory/memory_store_load.wat', 99)
+test_with_wat('table/call_indirect.wat', 42)
+test_with_wat('start/start_section.wat', 5)
+test_with_wat('control/loop_sum.wat', 55)
+test_with_wat('math/i64_const.wat', 1)
 
 if total_failures > 0:
     print(f"Total {total_failures} tests failed!")
