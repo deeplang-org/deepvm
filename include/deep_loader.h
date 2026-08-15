@@ -17,6 +17,7 @@
 /**
  * @brief section NO
  *
+ * 目前只实现了Type, Import, Func, Export, 和Data这几个section
  */
 #define SECTION_TYPE_USER 0
 #define SECTION_TYPE_TYPE 1
@@ -58,8 +59,10 @@ typedef struct DEEPType
 } DEEPType;
 
 /**
- * @brief local variable information in DEEPFunction
+ * @brief local variable information in DEEPBlock
  *
+ * 在WASM中，如果一个函数的有连续几个类型一样的参数，它可以指定这些参数的数量和类型而不是
+ * 一个一个地写出来。这个结构体就是用来存储这些信息的。
  */
 typedef struct LocalVarCluster
 {
@@ -68,17 +71,21 @@ typedef struct LocalVarCluster
 } LocalVarCluster;
 
 /**
- * @brief items of functoin section
+ * @brief items of function/block section
  *
  */
 typedef struct DEEPFunction
 {
-    DEEPType *func_type; // the type of function
-    LocalVarCluster *local_var_types; // Local variables' type informations
+    DEEPType *func_type; // 函数的类型
+    LocalVarCluster *local_var_types; // 详见上面的注释
     uint32_t code_size;
-    uint8_t *code_begin;
-    uint8_t local_vars_count;
-    bool is_import;
+    uint8_t *code_begin; // 代码开始的位置（在内存中）
+    uint8_t local_var_count; // 函数中的局部变量数量，包含参数
+    // 每个局部变量的偏移量，用于计算局部变量的地址
+    // 它的长度是local_var_count + 1，最后一个位置存的是所有变量的总长度
+    // 此设计可读性较差，将来可以考虑单独拆出一个变量来存此信息
+    uint32_t *local_var_offsets;
+    bool is_import; // 若为false，则是Deeplang“打洞”引入的函数，否则是wasm中的import函数
 } DEEPFunction;
 
 /**
@@ -116,6 +123,57 @@ typedef struct DEEPData
 } DEEPData;
 
 /**
+ * @brief items of global section
+ *
+ * 存储每个全局变量的类型、可变性以及初始值（以原始比特位形式存于 uint64_t 中，
+ * 实际占用字节数由 type 决定）。
+ */
+typedef struct DEEPGlobal
+{
+    uint8_t type;         // type_i32/type_i64/type_f32/type_f64
+    bool is_mutable;      // 0x00 const / 0x01 var
+    uint64_t init_value;  // 初始值（原始比特位）
+} DEEPGlobal;
+
+/**
+ * @brief items of memory section
+ *
+ * 记录线性内存的最小/最大页数（每页 64KB）。
+ */
+typedef struct DEEPMemory
+{
+    uint32_t min_pages;
+    uint32_t max_pages;   // 0 表示无上限（MVP 通常为 0xFFFFFFFF 或未指定）
+    bool has_max;
+} DEEPMemory;
+
+/**
+ * @brief items of table section
+ *
+ * MVP 下最多一张表，元素类型恒为 funcref(0x70)。
+ */
+typedef struct DEEPTable
+{
+    uint8_t element_type;
+    uint32_t min;
+    uint32_t max;         // 0 表示无上限
+    bool has_max;
+} DEEPTable;
+
+/**
+ * @brief items of elem section
+ *
+ * 记录表的初始内容：从 offset 开始的 func_count 个函数索引。
+ */
+typedef struct DEEPElem
+{
+    uint32_t table_index; // MVP 恒为 0
+    uint32_t offset;
+    uint32_t func_count;
+    uint32_t *func_indices;
+} DEEPElem;
+
+/**
  * @brief Data structure of module. We only support 5 sections which can make the program run.
  *
  */
@@ -131,11 +189,20 @@ typedef struct DEEPModule
     uint32_t import_memory_count;
     uint32_t import_global_count;
     uint32_t data_count;
+    uint32_t global_count;
+    uint32_t start_index; // Start section 中的起始函数索引
+    bool has_start;       // 是否存在 Start section
+    uint32_t table_count;
+    uint32_t elem_count;
     DEEPType **type_section;
     DEEPFunction **func_section;
     DEEPExport **export_section;
     DEEPImport **import_section;
     DEEPData **data_section;
+    DEEPGlobal **global_section;
+    DEEPMemory *memory;
+    DEEPTable *table;
+    DEEPElem **elem_section;
 } DEEPModule;
 
 /**
@@ -154,6 +221,10 @@ DEEPModule* deep_load(uint8_t** p, int32_t size);
 void module_free(DEEPModule *module);
 uint32_t read_leb_u32(uint8_t** p);
 int32_t read_leb_i32(uint8_t** p);
+uint64_t read_leb_u64(uint8_t** p);
+int64_t read_leb_i64(uint8_t** p);
+
+// 以下是一些helper
 
 /**
  * @brief Read a little-endian 32-bit floating point number.
@@ -162,7 +233,9 @@ int32_t read_leb_i32(uint8_t** p);
  * @return float
  */
 float read_ieee_32(uint8_t **p);
+double read_ieee_64(uint8_t **p);
 
+uint8_t wasm_type_size(uint8_t type);
 uint8_t* init_memory(uint32_t min_page);
 uint8_t read_mem8(uint8_t* mem, uint32_t offset);
 uint16_t read_mem16(uint8_t* mem, uint32_t offset);

@@ -1,4 +1,49 @@
 ## control testcase spec
+
+### proper_loop1
+
+计算1到10的和
+
+``` wasm
+(module
+  (type (;0;) (func (param i32 i32) (result i32)))
+  (type (;1;) (func (result i32)))
+  (func (;0;) (type 0) (param i32 i32) (result i32)
+    local.get 0
+    i32.const 1
+    i32.add
+    local.get 1
+    i32.mul)
+  (func (;1;) (type 1) (result i32)
+    (local $i i32) (local $r i32) ;; init with 0
+    loop  ;; label = @1
+      ;; Increment i
+      local.get $i
+      i32.const 1
+      i32.add
+      local.set $i
+    
+      ;; r += i
+      local.get $r
+      local.get $i
+      i32.add
+      local.set $r
+    
+      ;; break when i > 10
+      local.get $i
+      i32.const 10
+      i32.lt_s
+      br_if 0
+    end
+    local.get $r)
+  (table (;0;) 0 funcref)
+  (memory (;0;) 1)
+  (export "memory" (memory 0))
+  (export "getVal" (func 0))
+  (export "main" (func 1)))
+```
+
+
 ### tri_if_001
 ``` c
 int getVal (int a, int b) {

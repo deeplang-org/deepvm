@@ -4,6 +4,7 @@
  * Date:4/10/2021
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -12,6 +13,7 @@
 #include "deep_loader.h"
 #include "deep_log.h"
 #include "deep_mem.h"
+#include "deep_opcode.h"
 
 /**
  * @brief read a value of specified type
@@ -25,6 +27,24 @@
 #define WASM_MAGIC_SIZE 4
 #define WASM_VERSION_SIZE 4
 
+// 计算每种类型的大小
+uint8_t wasm_type_size(uint8_t type) {
+    switch (type)
+    {
+    case type_i32:
+    case type_f32:
+        return 4;
+    case type_i64:
+    case type_f64:
+        return 8;
+    case type_void:
+        return 0;
+    default:
+        deep_error("Invalid type 0x%x!", type);
+        exit(1);
+    }
+}
+
 /**
  * @brief read unsigned int 32bits
  *
@@ -33,8 +53,8 @@
  */
 uint32_t read_leb_u32(uint8_t** p) {
     uint8_t* buf = *p;
-    uint32_t   res = 0;
-    for (int32_t i = 0; i < 10; i++) {
+    uint32_t res = 0;
+    for (int32_t i = 0; i < 5; i++) {
         res |= (buf[i] & 0x7f) << (i * 7);
         if ((buf[i] & 0x80) == 0) {
             *p += i + 1;
@@ -44,17 +64,70 @@ uint32_t read_leb_u32(uint8_t** p) {
     return 0;
 }
 
+/**
+ * @brief read signed int 32bits
+ *
+ * @param p
+ * @return uint32_t
+ */
 int32_t read_leb_i32(uint8_t** p) {
     uint8_t* buf = *p;
-    int32_t res = 0;
-    for (int32_t i = 0; i < 10; i++) {
+    uint32_t res = 0;
+    uint32_t shift = 0;
+    for (int32_t i = 0; i < 5; i++) {
+        uint32_t byte = buf[i];
+        res |= (byte & 0x7f) << shift;
+        shift += 7;
+        if ((byte & 0x80) == 0) {
+            *p += i + 1;
+            if (shift < 32 && (byte & 0x40) != 0) {
+                res |= ~0U << shift;
+            }
+            return (int32_t)res;
+        }
+    }
+    return 0;
+}
+
+/**
+ * @brief read unsigned int 64bits
+ *
+ * @param p
+ * @return uint64_t
+ */
+uint64_t read_leb_u64(uint8_t** p) {
+    uint8_t* buf = *p;
+    uint64_t res = 0;
+    for (int64_t i = 0; i < 10; i++) {
         res |= (buf[i] & 0x7f) << (i * 7);
         if ((buf[i] & 0x80) == 0) {
             *p += i + 1;
-            if((buf[i] & 0x40) != 0) {
-                res = res | (-1 << ((i + 1) * 7));
-            }
             return res;
+        }
+    }
+    return 0;
+}
+
+/**
+ * @brief read signed int 64bits
+ *
+ * @param p
+ * @return int64_t
+ */
+int64_t read_leb_i64(uint8_t** p) {
+    uint8_t* buf = *p;
+    uint64_t res = 0;
+    uint32_t shift = 0;
+    for (int64_t i = 0; i < 10; i++) {
+        uint64_t byte = buf[i];
+        res |= (byte & 0x7f) << shift;
+        shift += 7;
+        if ((byte & 0x80) == 0) {
+            *p += i + 1;
+            if (shift < 64 && (byte & 0x40) != 0) {
+                res |= ~0ULL << shift;
+            }
+            return (int64_t)res;
         }
     }
     return 0;
@@ -64,6 +137,13 @@ float read_ieee_32(uint8_t **p) {
     // TODO: Support big-endian machines.
     float res = *(float *)(*p);
     *p += 4;
+    return res;
+}
+
+double read_ieee_64(uint8_t **p) {
+    // TODO: Support big-endian machines.
+    double res = *(double *)(*p);
+    *p += 8;
     return res;
 }
 
@@ -128,17 +208,17 @@ static section_listnode* create_section_list(const uint8_t** p, int32_t size) {
 static void decode_type_section(const uint8_t* p, DEEPModule* module) {
 
     const uint8_t* p_tmp;
-    uint32_t         total_size = 0;
-    uint32_t         type_count = 0, param_count = 0, ret_count = 0;
+    uint32_t total_size = 0;
+    uint32_t type_count = 0, param_count = 0, ret_count = 0;
     module->type_count = type_count = read_leb_u32((uint8_t**)&p);
     module->type_section = (DEEPType**)deep_malloc(type_count * sizeof(DEEPType*));
     for (int32_t i = 0; i < type_count; i++) {
         if (READ_BYTE(p) == 0x60) {
             param_count = read_leb_u32((uint8_t**)&p);
-            p_tmp     = p;
+            p_tmp = p;
             p += param_count;
             ret_count = read_leb_u32((uint8_t**)&p);
-            p          = p_tmp;
+            p = p_tmp;
             total_size = 8 + param_count + ret_count;
 
             module->type_section[i] = (DEEPType*)deep_malloc(sizeof(DEEPType));
@@ -158,7 +238,7 @@ static void decode_type_section(const uint8_t* p, DEEPModule* module) {
 }
 
 /**
- * @brief read funciton section
+ * @brief read function section
  *
  * @param p
  * @param module
@@ -168,18 +248,23 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
     uint32_t func_count = read_leb_u32((uint8_t**)&p);
     uint32_t code_func_count = read_leb_u32((uint8_t**)&p_code);
     uint32_t type_index, code_size, local_set_count, p_head;
-    uint8_t local_vars_count;
+    uint8_t local_var_count;
     DEEPFunction *func;
     const uint8_t *p_code_temp;
+
     if (func_count != code_func_count) {
         deep_error("function count is not equal to function body count");
         return;
     }
+
     uint32_t import_func_count = module->import_function_count;
     uint32_t all_func_count = import_func_count + func_count;
     module->function_count = all_func_count;
     module->func_section = (DEEPFunction**)deep_malloc(all_func_count * sizeof(DEEPFunction*));
-    /* functions from import section */
+
+    /* functions from import section
+       这些是“打洞”出来的函数，其定义都写在C里
+       它们只有Parameter，没有Local Variable */
     int32_t import_func_index = 0;
     DEEPImport *import = NULL;
     for(int32_t i = 0; i < module->import_count; i++) {
@@ -193,9 +278,25 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
             memset(func, 0, sizeof(DEEPFunction));
             func->is_import = true;
             func->func_type = module->type_section[import->index];
+            func->local_var_count = func->func_type->param_count;
+
+            func->local_var_offsets = (uint32_t *)deep_malloc(sizeof(uint32_t) * (func->local_var_count + 1));
+            func->local_var_types = (LocalVarCluster *)deep_malloc(func->local_var_count * sizeof(LocalVarCluster));
+
+            // 计算每一个局部变量（也就是参数）的偏移量
+            uint32_t offset = 0;
+            for (uint32_t j = 0; j < func->local_var_count; j++) {
+                func->local_var_types[j].count = 1;
+                func->local_var_types[j].local_type = func->func_type->type[j];
+                func->local_var_offsets[j] = offset;
+                offset += wasm_type_size(func->local_var_types[j].local_type);
+            }
+
+            func->local_var_offsets[func->local_var_count] = offset;
             import_func_index++;
         }
     }
+
     /* functions belong to function section self */
     for (uint32_t i = import_func_count; i < all_func_count; i++) {
         func = module->func_section[i] = (DEEPFunction*)deep_malloc(sizeof(DEEPFunction));
@@ -205,29 +306,49 @@ static void decode_func_section(const uint8_t* p, DEEPModule* module,const uint8
         p_code_temp = p_code;
         func->is_import = false;
         func->func_type = module->type_section[type_index];
+
         // The local variables also include the parameters
-        local_vars_count = func->func_type->param_count;
-        local_set_count = func->func_type->param_count + read_leb_u32((uint8_t**)&p_code);
+        local_var_count = func->func_type->param_count;
+        local_set_count = local_var_count + read_leb_u32((uint8_t**)&p_code);
         if (local_set_count == 0) {
             func->local_var_types = NULL;
         } else {
             func->local_var_types = (LocalVarCluster *)deep_malloc(local_set_count * sizeof(LocalVarCluster));
-            // For parameters, the count is 1, and the type
-            // is the type of the corresponding parameter
+            // 对参数而言，count为1，type和函数类型中描述的一致
             for (uint32_t j = 0; j < func->func_type->param_count; j++) {
                 func->local_var_types[j].count = 1;
                 func->local_var_types[j].local_type = func->func_type->type[j];
             }
+            // 对于非参数的局部变量，每个LocalVarCluster里的变量的类型都是一样的
             for (uint32_t j = func->func_type->param_count; j < local_set_count; j++) {
                 func->local_var_types[j].count = read_leb_u32((uint8_t **)&p_code);
-                local_vars_count += func->local_var_types[j].count;
+                local_var_count += func->local_var_types[j].count;
                 func->local_var_types[j].local_type = READ_BYTE(p_code);
             }
         }
+
+        // 函数的信息
         func->code_begin = (uint8_t*)p_code;
-        func->local_vars_count = local_vars_count;
+        func->local_var_count = local_var_count;
         func->code_size = code_size - (uint32_t)(p_code - p_code_temp);
         p_code = p_code_temp + code_size;
+
+        // 计算每个局部变量的偏移量
+        func->local_var_offsets = (uint32_t *)deep_malloc(sizeof(uint32_t) * (func->local_var_count + 1));
+        uint32_t offset = 0;
+        uint32_t j = 0;
+        for (uint32_t k = 0; k < local_set_count; k++) {
+            for (uint32_t c = 0; c < func->local_var_types[k].count; c++) {
+                func->local_var_offsets[j] = offset;
+                offset += wasm_type_size(func->local_var_types[k].local_type);
+                j += 1;
+            }
+        }
+
+        assert(j == func->local_var_count);
+        func->local_var_offsets[j] = offset;
+
+        import_func_index++;
     }
 }
 
@@ -247,7 +368,7 @@ static void decode_export_section(const uint8_t* p, DEEPModule* module) {
     for (uint32_t i = 0; i < export_count; i ++) {
         Export = module->export_section[i] = (DEEPExport*)deep_malloc(sizeof(DEEPExport));
         name_len = read_leb_u32((uint8_t**)&p);
-        Export->name = str_gen(p, name_len);
+        Export->name = str_gen((char *)p, name_len);
         p += name_len;
         Export->tag = READ_BYTE(p);
         Export->index = read_leb_u32((uint8_t**)&p);
@@ -272,11 +393,11 @@ static void decode_import_section(const uint8_t* p, DEEPModule* module)
         Import = module->import_section[i] = (DEEPImport *)deep_malloc(sizeof(DEEPImport));
         /* read import module name */
         module_name_len = read_leb_u32((uint8_t**)&p);
-        Import->module_name = str_gen(p, module_name_len);
+        Import->module_name = str_gen((char *)p, module_name_len);
         p += module_name_len;
         /* read member name */
         member_name_len = read_leb_u32((uint8_t**)&p);
-        Import->member_name = str_gen(p, member_name_len);
+        Import->member_name = str_gen((char *)p, member_name_len);
         p += member_name_len;
         /* read tag(type of this record) and index */
         Import->tag = READ_BYTE(p);
@@ -322,7 +443,151 @@ static void decode_data_section(const uint8_t* p, DEEPModule* module) {
         p ++;
         Data->datasize = read_leb_u32((uint8_t**)&p);
         Data->data = (uint8_t*)p;
+        p += Data->datasize; /* 跳过本段数据，继续解析下一个段 */
     }
+}
+
+/**
+ * @brief read global section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_global_section(const uint8_t* p, DEEPModule* module) {
+    uint32_t global_count = read_leb_u32((uint8_t**)&p);
+    module->global_count = global_count;
+    module->global_section = (DEEPGlobal**)deep_malloc(global_count * sizeof(DEEPGlobal*));
+
+    for (uint32_t i = 0; i < global_count; i++) {
+        DEEPGlobal* g = module->global_section[i] = (DEEPGlobal*)deep_malloc(sizeof(DEEPGlobal));
+        g->type = READ_BYTE(p);
+        g->is_mutable = (READ_BYTE(p) == 0x01);
+
+        // init_expr：MVP 下仅支持 const 与 global.get，末尾以 0x0B 结束
+        uint8_t op = READ_BYTE(p);
+        switch (op) {
+        case i32_const:
+            g->init_value = (uint64_t)(uint32_t)(int32_t)read_leb_i32((uint8_t**)&p);
+            break;
+        case i64_const:
+            g->init_value = (uint64_t)read_leb_i64((uint8_t**)&p);
+            break;
+        case f32_const: {
+            uint32_t v;
+            memcpy(&v, p, 4);
+            p += 4;
+            g->init_value = v;
+            break;
+        }
+        case f64_const: {
+            uint64_t v;
+            memcpy(&v, p, 8);
+            p += 8;
+            g->init_value = v;
+            break;
+        }
+        case op_global_get:
+            // 引用其它（通常是导入的）全局变量，此处暂不支持，初始值置 0
+            read_leb_u32((uint8_t**)&p);
+            g->init_value = 0;
+            break;
+        default:
+            deep_error("unsupported global init expr opcode 0x%x!", op);
+            break;
+        }
+
+        // init_expr 以 end(0x0B) 结束
+        uint8_t end = READ_BYTE(p);
+        if (end != op_end) {
+            deep_error("global init expr is not terminated by end!");
+        }
+    }
+}
+
+/**
+ * @brief read start section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_start_section(const uint8_t* p, DEEPModule* module) {
+    module->start_index = read_leb_u32((uint8_t**)&p);
+    module->has_start = true;
+}
+
+/**
+ * @brief read table section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_table_section(const uint8_t* p, DEEPModule* module) {
+    uint32_t table_count = read_leb_u32((uint8_t**)&p);
+    module->table_count = table_count;
+    if (table_count == 0) {
+        return;
+    }
+    // MVP 下最多一张表
+    module->table = (DEEPTable*)deep_malloc(sizeof(DEEPTable));
+    module->table->element_type = READ_BYTE(p);
+    uint8_t flags = READ_BYTE(p);
+    module->table->min = read_leb_u32((uint8_t**)&p);
+    module->table->has_max = (flags & 0x01) != 0;
+    module->table->max = module->table->has_max ? read_leb_u32((uint8_t**)&p) : 0;
+}
+
+/**
+ * @brief read elem section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_elem_section(const uint8_t* p, DEEPModule* module) {
+    uint32_t elem_count = read_leb_u32((uint8_t**)&p);
+    module->elem_count = elem_count;
+    module->elem_section = (DEEPElem**)deep_malloc(elem_count * sizeof(DEEPElem*));
+
+    for (uint32_t i = 0; i < elem_count; i++) {
+        DEEPElem* e = module->elem_section[i] = (DEEPElem*)deep_malloc(sizeof(DEEPElem));
+        e->table_index = read_leb_u32((uint8_t**)&p); // MVP 恒为 0
+
+        // offset expr：MVP 下仅允许 i32.const 常量偏移，末尾以 0x0B 结束
+        uint8_t op = READ_BYTE(p);
+        if (op == i32_const) {
+            e->offset = (uint32_t)(int32_t)read_leb_i32((uint8_t**)&p);
+        } else {
+            e->offset = 0;
+        }
+        uint8_t end = READ_BYTE(p);
+        if (end != op_end) {
+            deep_error("elem offset expr is not terminated by end!");
+        }
+
+        e->func_count = read_leb_u32((uint8_t**)&p);
+        e->func_indices = (uint32_t*)deep_malloc(e->func_count * sizeof(uint32_t));
+        for (uint32_t j = 0; j < e->func_count; j++) {
+            e->func_indices[j] = read_leb_u32((uint8_t**)&p);
+        }
+    }
+}
+
+/**
+ * @brief read memory section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_memory_section(const uint8_t* p, DEEPModule* module) {
+    uint32_t memory_count = read_leb_u32((uint8_t**)&p);
+    if (memory_count == 0) {
+        return;
+    }
+    // MVP 下最多 1 块内存
+    module->memory = (DEEPMemory*)deep_malloc(sizeof(DEEPMemory));
+    uint8_t flags = READ_BYTE(p);
+    module->memory->min_pages = read_leb_u32((uint8_t**)&p);
+    module->memory->has_max = (flags & 0x01) != 0;
+    module->memory->max_pages = module->memory->has_max ? read_leb_u32((uint8_t**)&p) : 0;
 }
 
 /**
@@ -355,29 +620,28 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
             decode_func_section(buf, module, p_code);
             break;
         case SECTION_TYPE_TABLE:
-
+            decode_table_section(buf, module);
             break;
         case SECTION_TYPE_MEMORY:
-
+            decode_memory_section(buf, module);
             break;
         case SECTION_TYPE_GLOBAL:
-
+            decode_global_section(buf, module);
             break;
         case SECTION_TYPE_EXPORT:
             decode_export_section(buf, module);
             break;
         case SECTION_TYPE_START:
-
+            decode_start_section(buf, module);
             break;
         case SECTION_TYPE_ELEM:
-
+            decode_elem_section(buf, module);
             break;
         case SECTION_TYPE_CODE:
 
             break;
         case SECTION_TYPE_DATA:
             decode_data_section(buf, module);
-
             break;
         default:
 
@@ -387,7 +651,7 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
     }
 }
 
-DEEPModule* deep_load(uint8_t** p, int size) {
+DEEPModule* deep_load(uint8_t** p, int32_t size) {
     if (!check_magic_number_and_version(p)) {
         deep_error("magic number error");
         return NULL;
@@ -417,31 +681,52 @@ DEEPModule* deep_load(uint8_t** p, int size) {
 
 void module_free(DEEPModule *module) {
     uint32_t i;
+
     for (i = 0; i < module->data_count; i++) {
         deep_free(module->data_section[i]);
     }
     deep_free(module->data_section);
+
     for (i = 0; i < module->type_count; i++) {
         deep_free(module->type_section[i]->type);
         deep_free(module->type_section[i]);
     }
     deep_free(module->type_section);
+
     for (i = 0; i < module->function_count; i++) {
         deep_free(module->func_section[i]->local_var_types);
+        deep_free(module->func_section[i]->local_var_offsets);
         deep_free(module->func_section[i]);
     }
     deep_free(module->func_section);
+
     for (i = 0; i < module->export_count; i++) {
         deep_free(module->export_section[i]->name);
         deep_free(module->export_section[i]);
     }
     deep_free(module->export_section);
+
     for (i = 0; i < module->import_count; i++) {
         deep_free(module->import_section[i]->module_name);
         deep_free(module->import_section[i]->member_name);
         deep_free(module->import_section[i]);
     }
     deep_free(module->import_section);
+
+    for (i = 0; i < module->global_count; i++) {
+        deep_free(module->global_section[i]);
+    }
+    deep_free(module->global_section);
+
+    for (i = 0; i < module->elem_count; i++) {
+        deep_free(module->elem_section[i]->func_indices);
+        deep_free(module->elem_section[i]);
+    }
+    deep_free(module->elem_section);
+
+    deep_free(module->memory);
+    deep_free(module->table);
+
     deep_free(module);
 }
 

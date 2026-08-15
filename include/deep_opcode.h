@@ -3,11 +3,17 @@
 //
 #ifndef _DEEP_OPCODE_H
 #define _DEEP_OPCODE_H
-enum DEEPOpcode {
+
+enum DEEPOPType {
     /* 类型 */
-    op_type_void = 0x40,
-    op_type_i32 = 0x7F,
-    op_type_f32 = 0x7D,
+    type_void = 0x40,
+    type_i32 = 0x7F,
+    type_f32 = 0x7D,
+    type_i64 = 0x7E,
+    type_f64 = 0x7C,
+};
+
+enum DEEPOpcode {
     /* 参数指令 */
     op_drop = 0x1A,
     op_select = 0x1B,
@@ -24,6 +30,7 @@ enum DEEPOpcode {
     op_br_table = 0x0E,
     op_return = 0x0F,
     op_call = 0x10,
+    op_call_indirect = 0x11,
     //变量指令
     op_local_get = 0x20,
     op_local_set = 0x21,
@@ -32,10 +39,35 @@ enum DEEPOpcode {
     op_global_set = 0x24,
     //内存指令
     i32_load = 0x28,
+    i64_load = 0x29,
+    f32_load = 0x2A,
+    f64_load = 0x2B,
+    i32_load8_s = 0x2C,
+    i32_load8_u = 0x2D,
+    i32_load16_s = 0x2E,
+    i32_load16_u = 0x2F,
+    i64_load8_s = 0x30,
+    i64_load8_u = 0x31,
+    i64_load16_s = 0x32,
+    i64_load16_u = 0x33,
+    i64_load32_s = 0x34,
+    i64_load32_u = 0x35,
     i32_store = 0x36,
+    i64_store = 0x37,
+    f32_store = 0x38,
+    f64_store = 0x39,
+    i32_store8 = 0x3A,
+    i32_store16 = 0x3B,
+    i64_store8 = 0x3C,
+    i64_store16 = 0x3D,
+    i64_store32 = 0x3E,
+    memory_size = 0x3F,
+    memory_grow = 0x40,
     //常数指令
     i32_const = 0x41,
+    i64_const = 0x42,
     f32_const = 0x43,
+    f64_const = 0x44,
     //二元整数算数指令
     i32_add = 0x6A,
     i32_sub = 0x6B,
@@ -52,6 +84,21 @@ enum DEEPOpcode {
     i32_shru = 0x76,
     i32_rotl = 0x77,
     i32_rotr = 0x78,
+    i64_add = 0x7C,
+    i64_sub = 0x7D,
+    i64_mul = 0x7E,
+    i64_divs = 0x7F,
+    i64_divu = 0x80,
+    i64_rems = 0x81,
+    i64_remu = 0x82,
+    i64_and = 0x83,
+    i64_or = 0x84,
+    i64_xor = 0x85,
+    i64_shl = 0x86,
+    i64_shrs = 0x87,
+    i64_shru = 0x88,
+    i64_rotl = 0x89,
+    i64_rotr = 0x8A,
     //二元浮点数算数指令
     f32_add = 0x92,
     f32_sub = 0x93,
@@ -60,10 +107,20 @@ enum DEEPOpcode {
     f32_min = 0x96,
     f32_max = 0x97,
     f32_copysign = 0x98,
+    f64_add = 0xA0,
+    f64_sub = 0xA1,
+    f64_mul = 0xA2,
+    f64_div = 0xA3,
+    f64_min = 0xA4,
+    f64_max = 0xA5,
+    f64_copysign = 0xA6,
     //一元算数指令
     i32_clz = 0x67,
     i32_ctz = 0x68,
     i32_popcnt = 0x69,
+    i64_clz = 0x79,
+    i64_ctz = 0x7A,
+    i64_popcnt = 0x7B,
     f32_abs = 0x8B,
     f32_neg = 0x8C,
     f32_ceil = 0x8D,
@@ -71,6 +128,13 @@ enum DEEPOpcode {
     f32_trunc = 0x8F,
     f32_nearest = 0x90,
     f32_sqrt = 0x91,
+    f64_abs = 0x99,
+    f64_neg = 0x9A,
+    f64_ceil = 0x9B,
+    f64_floor = 0x9C,
+    f64_trunc = 0x9D,
+    f64_nearest = 0x9E,
+    f64_sqrt = 0x9F,
     //比较指令
     i32_eqz = 0x45,
     i32_eq = 0x46,
@@ -107,10 +171,34 @@ enum DEEPOpcode {
     f64_le = 0x65,
     f64_ge = 0x66,
     //转换指令
+    i32_wrap_i64 = 0xA7,
     i32_trunc_f32_s = 0xA8,
     i32_trunc_f32_u = 0xA9,
+    i32_trunc_f64_s = 0xAA,
+    i32_trunc_f64_u = 0xAB,
+    i64_extend_i32_s = 0xAC,
+    i64_extend_i32_u = 0xAD,
+    i64_trunc_f32_s = 0xAE,
+    i64_trunc_f32_u = 0xAF,
+    i64_trunc_f64_s = 0xB0,
+    i64_trunc_f64_u = 0xB1,
     f32_convert_i32_s = 0xB2,
     f32_convert_i32_u = 0xB3,
+    f32_convert_i64_s = 0xB4,
+    f32_convert_i64_u = 0xB5,
+    f32_demote_f64 = 0xB6,
+    f64_convert_i32_s = 0xB7,
+    f64_convert_i32_u = 0xB8,
+    f64_convert_i64_s = 0xB9,
+    f64_convert_i64_u = 0xBA,
+    f64_promote_f32 = 0xBB,
+    i32_reinterpret_f32 = 0xBC,
+    i64_reinterpret_f64 = 0xBD,
+    f32_reinterpret_i32 = 0xBE,
+    f64_reinterpret_i64 = 0xBF,
 };
+
+
+const char *printDEEPOpcode(uint32_t opcode);
 
 #endif /* _DEEP_OPCODE_H */
