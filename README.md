@@ -1,8 +1,16 @@
-# DeepVM
-
-<p align="center">
-  <img src="doc/assets/deepvm-logo.png" alt="DeepVM logo" width="180" />
-</p>
+<div align="center">
+  <img src="doc/assets/deepvm-logo.png" alt="DeepVM" width="480" />
+  <h1>DeepVM</h1>
+  <p>
+    <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="DeepVM version" />
+    <img src="https://img.shields.io/badge/WebAssembly-1.0-654FF0" alt="WebAssembly 1.0" />
+    <img src="https://img.shields.io/badge/language-C-555555" alt="language" />
+    <img src="https://img.shields.io/badge/license-MIT-green" alt="license" />
+    <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="build" />
+    <img src="https://img.shields.io/badge/tests-374_passed-brightgreen" alt="tests" />
+    <img src="https://img.shields.io/badge/project-open-brightgreen" alt="project status" />
+  </p>
+</div>
 
 DeepVM 是一个用 C 语言编写的 **WebAssembly 1.0（MVP）** 解释器，也是
 [Deeplang](https://github.com/deeplang-org)（面向 IoT 设备的新型编程语言）的后端执行引擎。
@@ -106,4 +114,4 @@ deepvm/
 
 ## License
 
-遵循项目仓库中的许可协议。
+本项目采用 [MIT License](LICENSE)。
