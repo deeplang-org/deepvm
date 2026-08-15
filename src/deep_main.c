@@ -7,6 +7,7 @@
 #include "deep_loader.h"
 #include "deep_log.h"
 #include "deep_mem.h"
+#include "deep_version.h"
 
 #define WASM_FILE_SIZE 1024
 
@@ -20,6 +21,14 @@
 uint8_t deepmem[MEM_SIZE] = {0};
 
 int32_t main(int argv, char **args) {
+    // 处理版本号参数：--version / -v
+    for (int32_t i = 1; i < argv; i++) {
+        if (strcmp(args[i], "--version") == 0 || strcmp(args[i], "-v") == 0) {
+            deep_print_version();
+            return 0;
+        }
+    }
+
     // 初始化deepmem
     deep_mem_init(deepmem, MEM_SIZE);
 
