@@ -60,6 +60,40 @@ const char *printDEEPOpcode(uint32_t opcode) {
         return "f32.store";
     case f64_store:
         return "f64.store";
+    case i32_load8_s:
+        return "i32.load8_s";
+    case i32_load8_u:
+        return "i32.load8_u";
+    case i32_load16_s:
+        return "i32.load16_s";
+    case i32_load16_u:
+        return "i32.load16_u";
+    case i64_load8_s:
+        return "i64.load8_s";
+    case i64_load8_u:
+        return "i64.load8_u";
+    case i64_load16_s:
+        return "i64.load16_s";
+    case i64_load16_u:
+        return "i64.load16_u";
+    case i64_load32_s:
+        return "i64.load32_s";
+    case i64_load32_u:
+        return "i64.load32_u";
+    case i32_store8:
+        return "i32.store8";
+    case i32_store16:
+        return "i32.store16";
+    case i64_store8:
+        return "i64.store8";
+    case i64_store16:
+        return "i64.store16";
+    case i64_store32:
+        return "i64.store32";
+    case memory_size:
+        return "memory.size";
+    case memory_grow:
+        return "memory.grow";
     case i32_const:
         return "i32.const";
     case i64_const:

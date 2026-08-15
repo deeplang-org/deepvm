@@ -65,6 +65,7 @@ int32_t main(int argv, char **args) {
     current_env->sp = stack->sp;
     current_env->global_vars = (uint64_t *) deep_malloc(sizeof(uint64_t) * GLOBAL_VAR_COUNT);
     current_env->memory = init_memory(1);
+    current_env->memory_pages = 1;
     current_env->control_stack = control_stack;
     current_env->jump_depth = 0;
     int64_t ans = call_main(current_env, module);

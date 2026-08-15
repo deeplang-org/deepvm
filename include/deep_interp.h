@@ -103,6 +103,7 @@ typedef struct DEEPExecEnv {
     uint8_t *local_vars;
     uint64_t *global_vars;
     uint8_t *memory;
+    uint32_t memory_pages; // 当前线性内存页数（每页 64KB）
     DEEPControlStack *control_stack;
     int jump_depth;
 } DEEPExecEnv;

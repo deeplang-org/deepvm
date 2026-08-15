@@ -412,6 +412,8 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i64_const:
         case op_br:
         case op_br_if:
+        case memory_size:
+        case memory_grow:
             ip++;
             read_leb_u32(&ip);
             break;
@@ -420,10 +422,25 @@ void read_block(uint8_t *ip, uint8_t **start, uint32_t *offset) {
         case i64_load:
         case f32_load:
         case f64_load:
+        case i32_load8_s:
+        case i32_load8_u:
+        case i32_load16_s:
+        case i32_load16_u:
+        case i64_load8_s:
+        case i64_load8_u:
+        case i64_load16_s:
+        case i64_load16_u:
+        case i64_load32_s:
+        case i64_load32_u:
         case i32_store:
         case i64_store:
         case f32_store:
         case f64_store:
+        case i32_store8:
+        case i32_store16:
+        case i64_store8:
+        case i64_store16:
+        case i64_store32:
             ip++;
             read_leb_u32(&ip);
             read_leb_u32(&ip);
@@ -662,6 +679,86 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 pushF64(*(double *)&number);
                 break;
             }
+            case i32_load8_s: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushS32((int32_t)(int8_t)read_mem8(memory + base, offset));
+                break;
+            }
+            case i32_load8_u: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushU32(read_mem8(memory + base, offset));
+                break;
+            }
+            case i32_load16_s: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushS32((int32_t)(int16_t)read_mem16(memory + base, offset));
+                break;
+            }
+            case i32_load16_u: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushU32(read_mem16(memory + base, offset));
+                break;
+            }
+            case i64_load8_s: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushS64((int64_t)(int8_t)read_mem8(memory + base, offset));
+                break;
+            }
+            case i64_load8_u: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushU64(read_mem8(memory + base, offset));
+                break;
+            }
+            case i64_load16_s: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushS64((int64_t)(int16_t)read_mem16(memory + base, offset));
+                break;
+            }
+            case i64_load16_u: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushU64(read_mem16(memory + base, offset));
+                break;
+            }
+            case i64_load32_s: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushS64((int64_t)(int32_t)read_mem32(memory + base, offset));
+                break;
+            }
+            case i64_load32_u: {
+                ip++;
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                pushU64(read_mem32(memory + base, offset));
+                break;
+            }
             case i32_store: {
                 ip++;
                 uint32_t number = popU32();
@@ -696,6 +793,83 @@ bool exec_instructions(DEEPExecEnv *current_env, DEEPModule *module) {
                 uint32_t align = read_leb_u32(&ip);
                 uint32_t offset = read_leb_u32(&ip);
                 write_mem64(memory + base, *(uint64_t *)&number, offset);
+                break;
+            }
+            case i32_store8: {
+                ip++;
+                uint32_t number = popU32();
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                write_mem8(memory + base, (uint8_t)number, offset);
+                break;
+            }
+            case i32_store16: {
+                ip++;
+                uint32_t number = popU32();
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                write_mem16(memory + base, (uint16_t)number, offset);
+                break;
+            }
+            case i64_store8: {
+                ip++;
+                uint64_t number = popU64();
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                write_mem8(memory + base, (uint8_t)number, offset);
+                break;
+            }
+            case i64_store16: {
+                ip++;
+                uint64_t number = popU64();
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                write_mem16(memory + base, (uint16_t)number, offset);
+                break;
+            }
+            case i64_store32: {
+                ip++;
+                uint64_t number = popU64();
+                uint32_t base = popU32();
+                uint32_t align = read_leb_u32(&ip);
+                uint32_t offset = read_leb_u32(&ip);
+                write_mem32(memory + base, (uint32_t)number, offset);
+                break;
+            }
+            case memory_size: {
+                ip++;
+                read_leb_u32(&ip); // 内存索引，MVP 恒为 0，忽略
+                pushU32(current_env->memory_pages);
+                break;
+            }
+            case memory_grow: {
+                ip++;
+                read_leb_u32(&ip); // 内存索引，MVP 恒为 0，忽略
+                uint32_t delta = popU32();
+                uint32_t old_pages = current_env->memory_pages;
+                if (delta == 0) {
+                    pushU32(old_pages);
+                    break;
+                }
+                uint32_t new_pages = old_pages + delta;
+                if (new_pages <= old_pages) {
+                    pushS32(-1);
+                    break;
+                }
+                uint8_t *new_mem = deep_realloc(current_env->memory, new_pages * PAGESIZE);
+                if (new_mem == NULL) {
+                    pushS32(-1);
+                    break;
+                }
+                memset(new_mem + old_pages * PAGESIZE, 0, (new_pages - old_pages) * PAGESIZE);
+                current_env->memory = new_mem;
+                current_env->memory_pages = new_pages;
+                memory = new_mem;
+                pushU32(old_pages);
                 break;
             }
             case op_local_get: {
