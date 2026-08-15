@@ -256,17 +256,17 @@ test_with_path('table/call_indirect_oob_001.wasm', returncode=1)
 # start/（Start section：main 前先执行起始函数）
 test_with_path('start/set_global.wasm', 99)
 
-# WAT 专属用例（折叠/平铺语法、start/elem 等，无对应 .wasm；分散到各分类目录）
-test_with_wat('math/add_folded.wat', 3)
-test_with_wat('math/mul_flat.wat', 35)
-test_with_wat('builtin/puts_string.wat', 'hello deeplang\n0')
-test_with_wat('control/if_else.wat', 100)
-test_with_wat('global/global_get.wat', 42)
-test_with_wat('memory/memory_store_load.wat', 99)
-test_with_wat('table/call_indirect.wat', 42)
-test_with_wat('start/start_section.wat', 5)
-test_with_wat('control/loop_sum.wat', 55)
-test_with_wat('math/i64_const.wat', 1)
+# 折叠/平铺语法、start/elem 等补充用例（每个 .wat 都有同名 .wasm）
+test_with_path('math/add_folded.wasm', 3)
+test_with_path('math/mul_flat.wasm', 35)
+test_with_path('math/i64_const.wasm', 1)
+test_with_path('builtin/puts_string.wasm', 'hello deeplang\n0')
+test_with_path('control/if_else.wasm', 100)
+test_with_path('control/loop_sum.wasm', 55)
+test_with_path('global/global_get.wasm', 42)
+test_with_path('memory/memory_store_load.wasm', 99)
+test_with_path('table/call_indirect.wasm', 42)
+test_with_path('start/start_section.wasm', 5)
 
 if total_failures > 0:
     print(f"Total {total_failures} tests failed!")

@@ -32,16 +32,16 @@ math/add_int_0_-10.wasm   <->  math/add_int_0_-10.wat
 This round-trip verifies that the WAT assembler (`src/deep_wat.c`) and the wasm
 loader/interpreter agree.
 
-A few `.wat` cases have no `.wasm` sibling — they exercise WAT-only syntax
-(folded vs. flat instruction layout, `start`, `elem`, etc.):
+Every `.wat` case also has a `.wasm` sibling. A few of them exercise WAT-only
+syntax (folded vs. flat instruction layout, `start`, `elem`, etc.):
 
-- `math/add_folded.wat`, `math/mul_flat.wat`, `math/i64_const.wat`
-- `control/if_else.wat`, `control/loop_sum.wat`
-- `global/global_get.wat`
-- `memory/memory_store_load.wat`
-- `table/call_indirect.wat`
-- `start/start_section.wat`
-- `builtin/puts_string.wat`
+- `math/add_folded`, `math/mul_flat`, `math/i64_const`
+- `control/if_else`, `control/loop_sum`
+- `global/global_get`
+- `memory/memory_store_load`
+- `table/call_indirect`
+- `start/start_section`
+- `builtin/puts_string`
 
 ## Run
 
