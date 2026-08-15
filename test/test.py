@@ -268,6 +268,16 @@ test_with_path('memory/memory_store_load.wasm', 99)
 test_with_path('table/call_indirect.wasm', 42)
 test_with_path('start/start_section.wasm', 5)
 
+# combine/（组合多特性：函数/控制流/内存/全局/表/start/内置函数等）
+test_with_path('combine/factorial_iter.wasm', 120)
+test_with_path('combine/array_sum_squares.wasm', 91)
+test_with_path('combine/max_min.wasm', 1102)
+test_with_path('combine/dispatch.wasm', 72)
+test_with_path('combine/start_init.wasm', 20)
+test_with_path('combine/bit_ops.wasm', 290)
+test_with_path('combine/float_mix.wasm', 117)
+test_with_path('combine/string_report.wasm', 'deepvm: 42\n0')
+
 if total_failures > 0:
     print(f"Total {total_failures} tests failed!")
     exit(1)

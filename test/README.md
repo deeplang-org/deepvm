@@ -18,6 +18,7 @@ extension).
 | `start/`  | Start section                                        |
 | `control/`| `block`/`loop`/`if`/`br`/`br_if`/`br_table`/`select` |
 | `builtin/`| imports of native `puts`/`puti`/`putf`/`putl`/`putd` |
+| `combine/`| combined multi-feature cases (functions, control flow, memory, globals, table, start, builtins, …) |
 
 ## One-to-one wasm <-> wat
 
