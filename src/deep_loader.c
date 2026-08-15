@@ -443,6 +443,7 @@ static void decode_data_section(const uint8_t* p, DEEPModule* module) {
         p ++;
         Data->datasize = read_leb_u32((uint8_t**)&p);
         Data->data = (uint8_t*)p;
+        p += Data->datasize; /* 跳过本段数据，继续解析下一个段 */
     }
 }
 

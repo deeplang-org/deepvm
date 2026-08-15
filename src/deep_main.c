@@ -8,6 +8,7 @@
 #include "deep_log.h"
 #include "deep_mem.h"
 #include "deep_version.h"
+#include "deep_wat.h"
 
 #define WASM_FILE_SIZE 1024
 
@@ -21,12 +22,43 @@
 uint8_t deepmem[MEM_SIZE] = {0};
 
 int32_t main(int argv, char **args) {
-    // 处理版本号参数：--version / -v
+    // 解析参数：--version / -v、-o <输出>、输入文件
+    char *input_path = NULL;
+    char *output_path = NULL;
     for (int32_t i = 1; i < argv; i++) {
         if (strcmp(args[i], "--version") == 0 || strcmp(args[i], "-v") == 0) {
             deep_print_version();
             return 0;
+        } else if (strcmp(args[i], "-o") == 0) {
+            if (i + 1 < argv) {
+                output_path = args[++i];
+            } else {
+                deep_error("-o needs an output path");
+                return -1;
+            }
+        } else if (input_path == NULL) {
+            input_path = args[i];
         }
+    }
+
+    // WAT 文本 → 汇编为 .wasm 二进制（扩展名自动识别）
+    if (input_path != NULL && deep_wat_is_path(input_path)) {
+        char *out = output_path;
+        bool owned = false;
+        if (out == NULL) {
+            size_t len = strlen(input_path);
+            out = (char *)malloc(len + 2);
+            if (out == NULL) {
+                deep_error("malloc fail.");
+                return -1;
+            }
+            memcpy(out, input_path, len - 3);
+            strcpy(out + len - 3, "wasm");
+            owned = true;
+        }
+        int32_t rc = deep_wat_compile_file(input_path, out);
+        if (owned) free(out);
+        return rc;
     }
 
     // 初始化deepmem
@@ -35,11 +67,10 @@ int32_t main(int argv, char **args) {
     // 测试用：获取当前空闲内存数量
     uint64_t free_mem = deep_get_free_memory();
 
-    char *path;
-    if(argv==1){
+    char *path = input_path;
+    if (path == NULL) {
         deep_error("no file input!");
-    }else{
-        path = args[1];
+        return -1;
     }
     uint8_t *q = (uint8_t *) deep_malloc(WASM_FILE_SIZE);
     uint8_t *p = q;
