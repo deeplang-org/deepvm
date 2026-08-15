@@ -504,6 +504,17 @@ static void decode_global_section(const uint8_t* p, DEEPModule* module) {
 }
 
 /**
+ * @brief read start section
+ *
+ * @param p
+ * @param module
+ */
+static void decode_start_section(const uint8_t* p, DEEPModule* module) {
+    module->start_index = read_leb_u32((uint8_t**)&p);
+    module->has_start = true;
+}
+
+/**
  * @brief read memory section
  *
  * @param p
@@ -564,7 +575,7 @@ static void decode_each_sections(DEEPModule* module, section_listnode* section_l
             decode_export_section(buf, module);
             break;
         case SECTION_TYPE_START:
-
+            decode_start_section(buf, module);
             break;
         case SECTION_TYPE_ELEM:
 

@@ -164,6 +164,8 @@ typedef struct DEEPModule
     uint32_t import_global_count;
     uint32_t data_count;
     uint32_t global_count;
+    uint32_t start_index; // Start section 中的起始函数索引
+    bool has_start;       // 是否存在 Start section
     DEEPType **type_section;
     DEEPFunction **func_section;
     DEEPExport **export_section;

@@ -1931,6 +1931,11 @@ int64_t call_main(DEEPExecEnv *current_env, DEEPModule *module) {
     current_env->control_stack->frames[
         current_env->control_stack->current_frame_index] = main_frame;
 
+    // 若存在 Start section，则先执行起始函数（类型为 [] -> []）
+    if (module->has_start) {
+        call_function(current_env, module, module->start_index);
+    }
+
     // 执行frame中函数
     // sp要下移，栈顶元素即为函数参数
     exec_instructions(current_env, module);
