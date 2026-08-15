@@ -83,7 +83,7 @@ static uint8_t * native_puts(DEEPExecEnv *env, DEEPModule *module) {
 
     if (!data_found) {
         pushS32(-1);
-        return;
+        return sp;
     }
 
     printf("%s",(char *)data->data);
@@ -111,7 +111,7 @@ static uint8_t *native_putf(DEEPExecEnv *env, DEEPModule *module) {
 // 内置函数：输出64位有符号整数
 static uint8_t *native_putl(DEEPExecEnv *env, DEEPModule *module) {
     uint8_t *sp = env->cur_frame->sp;
-    printf("%lld", popS64());
+    printf("%lld", (long long)popS64());
     pushU32(0);
     return sp;
 }
